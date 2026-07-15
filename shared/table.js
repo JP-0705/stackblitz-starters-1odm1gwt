@@ -133,7 +133,7 @@ function renderTableRows(dataRows, groupByIssuedTo = false) {
       <td>${item.serialNumber || '---'}</td>
       <td>${item.itemCategory || '---'}</td>
       <td>${imageCell}</td>
-      <td style="color:#64748b; font-size:11px;">${item.category}</td>
+      <td style="color:#64748b; font-size:11px;">${item.category || '---'}</td>
       <td>${item.branch || 'NAGA'}</td>
       <td>${item.issuedTo || '---'}</td>
       <td>${item.purchaseDate || '---'}</td>
