@@ -158,7 +158,12 @@ async function commitAssetStorageChange() {
       .select('id')
       .eq('id', newId)
       .maybeSingle();
-    if (existing) return alert('Valid non-duplicate ID required');
+    if (existing)
+      return alert(
+        `The ID "${newId}" is already taken.\n\n` +
+          `If you don't see it in the table, it's likely sitting in Settings → Deleted Items ` +
+          `(deleting doesn't free up the ID). Restore it from there, or pick a different ID.`
+      );
 
     const newItem = {
       id: newId,

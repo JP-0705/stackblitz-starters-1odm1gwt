@@ -1,14 +1,55 @@
 // Analytics page only — three charts driven by live asset data.
+// NOTE: this page does not load shared/table.js (it has no row table),
+// so it needs its own copies of the filter-handling functions that the
+// header controls call — handleBranchFilterChange() and searchAssets().
 let branchChartInstance = null;
 let categoryChartInstance = null;
 let conditionChartInstance = null;
+
+function getAnalyticsFilteredAssets(allAssets) {
+  const searchEl = document.getElementById('globalSearch');
+  const conditionEl = document.getElementById('conditionFilterSelect');
+  const searchInput = (searchEl ? searchEl.value : '').toLowerCase();
+  const conditionFilter = conditionEl ? conditionEl.value : 'ALL';
+
+  return allAssets.filter((item) => {
+    const matchesBranch =
+      currentBranchFilter === 'ALL' || item.branch === currentBranchFilter;
+    const matchesCondition =
+      conditionFilter === 'ALL' || item.condition === conditionFilter;
+    const matchesKeyword =
+      !searchInput ||
+      (item.id || '').toLowerCase().includes(searchInput) ||
+      (item.name || '').toLowerCase().includes(searchInput) ||
+      (item.brand || '').toLowerCase().includes(searchInput) ||
+      (item.issuedTo || '').toLowerCase().includes(searchInput) ||
+      (item.model || '').toLowerCase().includes(searchInput) ||
+      (item.itemCategory || '').toLowerCase().includes(searchInput) ||
+      (item.serialNumber || '').toLowerCase().includes(searchInput);
+    return matchesBranch && matchesCondition && matchesKeyword;
+  });
+}
+
+// Called by the OFFICE BRANCH dropdown's onchange.
+function handleBranchFilterChange() {
+  currentBranchFilter = document.getElementById('branchFilterSelect').value;
+  loadAnalyticsCharts();
+}
+
+// Called by the search box, condition dropdown, and "Group by Issued To"
+// checkbox. That last one has no meaning for charts (there's nothing to
+// group visually), so it's intentionally a no-op beyond re-filtering.
+function searchAssets() {
+  loadAnalyticsCharts();
+}
 
 async function loadAnalyticsCharts() {
   if (!supabaseClient) {
     return alert('Not connected to the database. Check the console for details.');
   }
 
-  const allAssets = await fetchBackendDataRows();
+  const rawAssets = await fetchBackendDataRows();
+  const allAssets = getAnalyticsFilteredAssets(rawAssets);
 
   const branchTotals = {};
   allAssets.forEach((item) => {
