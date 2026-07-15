@@ -17,3 +17,20 @@ document.addEventListener('click', (e) => {
     closeSettingsMenu();
   }
 });
+
+// Simple in-page lightbox for asset thumbnails — keeps the click from
+// navigating away to the image's own URL in a new tab.
+function showAssetImagePreview(url, label) {
+  const modal = document.getElementById('imagePreviewModal');
+  if (!modal) return;
+  document.getElementById('imagePreviewImg').src = url;
+  document.getElementById('imagePreviewLabel').innerText = label || '';
+  modal.style.display = 'flex';
+}
+
+function closeAssetImagePreview() {
+  const modal = document.getElementById('imagePreviewModal');
+  if (!modal) return;
+  modal.style.display = 'none';
+  document.getElementById('imagePreviewImg').src = '';
+}

@@ -121,7 +121,7 @@ function renderTableRows(dataRows, groupByIssuedTo = false) {
     const noteClass = noteClassMap[item.note] || 'note-active';
 
     const imageCell = item.imageUrl
-      ? `<img src="${item.imageUrl}" alt="${item.name || 'asset'}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; cursor:pointer;" onclick="window.open('${item.imageUrl}', '_blank')" />`
+      ? `<img src="${item.imageUrl}" alt="${item.name || 'asset'}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; cursor:pointer;" onclick="showAssetImagePreview('${item.imageUrl}', '${(item.name || 'Asset').replace(/'/g, "\\'")}')" />`
       : '<span style="color:#94a3b8; font-size:11px;">No Image</span>';
 
     row.innerHTML = `
