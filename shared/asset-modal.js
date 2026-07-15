@@ -15,6 +15,19 @@ function previewAssetImageFile() {
   if (!file) return;
   preview.src = URL.createObjectURL(file);
   preview.style.display = 'block';
+  document.getElementById('removeAssetImageBtn').style.display = 'inline-block';
+}
+
+// Clears the image entirely — both a newly-picked file (if any) and an
+// existing saved image (if any). Save Changes will persist the asset with
+// no image once this has been clicked.
+function removeAssetImage() {
+  document.getElementById('formAssetImageFile').value = '';
+  document.getElementById('formAssetImageUrl').value = '';
+  const preview = document.getElementById('formAssetImagePreview');
+  preview.src = '';
+  preview.style.display = 'none';
+  document.getElementById('removeAssetImageBtn').style.display = 'none';
 }
 
 function openAssetInsertModal() {
@@ -33,6 +46,7 @@ function openAssetInsertModal() {
   const addPreview = document.getElementById('formAssetImagePreview');
   addPreview.src = '';
   addPreview.style.display = 'none';
+  document.getElementById('removeAssetImageBtn').style.display = 'none';
   document.getElementById('formAssetBranch').value = 'NAGA';
   document.getElementById('formAssetIssuedTo').value = '';
   document.getElementById('formAssetPurchaseDate').value = '';
@@ -70,12 +84,15 @@ async function openAssetEditModal(assetId) {
   document.getElementById('formAssetImageFile').value = '';
   document.getElementById('formAssetImageUrl').value = item.imageUrl || '';
   const editPreview = document.getElementById('formAssetImagePreview');
+  const removeBtn = document.getElementById('removeAssetImageBtn');
   if (item.imageUrl) {
     editPreview.src = item.imageUrl;
     editPreview.style.display = 'block';
+    removeBtn.style.display = 'inline-block';
   } else {
     editPreview.src = '';
     editPreview.style.display = 'none';
+    removeBtn.style.display = 'none';
   }
   document.getElementById('formAssetBranch').value = item.branch || 'NAGA';
   document.getElementById('formAssetCategory').value = item.category;
