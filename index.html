@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Innovphil Asset Portal</title>
+  </head>
+  <body>
+    <p style="font-family: sans-serif; padding: 24px;">Redirecting…</p>
+    <script>
+      const session = JSON.parse(sessionStorage.getItem('ACTIVE_SESSION')) || null;
+      window.location.href = session ? '/dashboard/' : '/login/';
+    </script>
+  </body>
+</html>

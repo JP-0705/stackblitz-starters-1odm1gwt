@@ -1,0 +1,4 @@
+{
+  "name": "innovphil-asset-portal",
+  "scripts": { "start": "npx serve . -l 3000" }
+}

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login — Innovphil Asset Portal</title>
+    <link rel="stylesheet" href="/shared/styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  </head>
+  <body class="standalone-auth-page">
+    <div class="auth-card">
+      <div class="auth-title"><img src="https://i.ibb.co/mVgtpqGB/INNOVPHIL-LOGO-Blue.png" alt="INNOVPHIL-LOGO-Blue"></div>
+      <p class="auth-subtitle">Inventory Management System</p>
+      <input type="text" id="authEmail" class="auth-input" placeholder="Email" />
+      <input type="password" id="authPassword" class="auth-input" placeholder="Password" />
+      <button onclick="executeLoginGate()" class="auth-btn">LOGIN</button>
+      <div id="authErrorMsg" class="auth-error">Invalid access payload permissions.</div>
+      <p class="auth-signup-link">
+        Don't have an account?
+        <a href="/create-account/">Create one</a>
+      </p>
+    </div>
+
+    <script src="/shared/supabase-client.js"></script>
+    <script src="/login/login.js"></script>
+  </body>
+</html>

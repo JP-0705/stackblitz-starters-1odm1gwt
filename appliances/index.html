@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Appliances — Innovphil Asset Portal</title>
+    <link rel="stylesheet" href="/shared/styles.css" />
+    <script
+      src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+      onerror="document.getElementById('diagBanner').style.display='block'; document.getElementById('diagBanner').innerText='DIAGNOSTIC: The Supabase library failed to load from the CDN (network/ad-blocker/offline issue).';"
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <div
+      id="diagBanner"
+      style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 99999;
+        background: #dc2626;
+        color: #fff;
+        font-family: monospace;
+        font-size: 13px;
+        padding: 10px 16px;
+        white-space: pre-wrap;
+      "
+    ></div>
+    <script>
+      window.addEventListener('error', function (e) {
+        const banner = document.getElementById('diagBanner');
+        banner.style.display = 'block';
+        banner.innerText =
+          'DIAGNOSTIC ERROR: ' +
+          e.message +
+          ' (in ' +
+          (e.filename || 'unknown file') +
+          ', line ' +
+          e.lineno +
+          ')';
+      });
+    </script>
+  </head>
+  <body>
+    <button id="sidebarToggleBtn" class="sidebar-toggle-btn no-print" onclick="toggleSidebar()" title="Toggle sidebar">☰</button>
+
+    <aside class="sidebar no-print" id="mainSidebar">
+      <div>
+        <div class="brand-block"><img src="https://i.ibb.co/mVgtpqGB/INNOVPHIL-LOGO-Blue.png" alt="INNOVPHIL-LOGO-Blue"></div>
+        <nav class="nav-menu">
+          <a href="/analytics/" class="nav-btn" id="analyticsNavBtn">📊 ANALYTICS</a>
+          <a href="/dashboard/" class="nav-btn">DASHBOARD</a>
+          <a href="/appliances/" class="nav-btn active">APPLIANCES</a>
+          <a href="/furniture-fixtures/" class="nav-btn">FURNITURES & FIXTURES</a>
+          <a href="/office-supplies/" class="nav-btn">OFFICE SUPPLIES</a>
+          <a href="/it-equipment/" class="nav-btn">IT EQUIPMENT</a>
+          <a href="/vehicle-others/" class="nav-btn">VEHICLE & OTHERS</a>
+          <a href="/aha-equipment/" class="nav-btn">AHA EQUIPMENT</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-settings">
+        <div id="settingsMenu" class="settings-menu">
+          <div class="settings-menu-role">
+            Role: <strong id="roleLabelDisplay">GUEST</strong>
+          </div>
+          <a href="#" id="deletedItemsMenuLink" onclick="openDeletedItemsModal(); closeSettingsMenu(); return false;" style="display:none;">
+            🗑️ Deleted Items
+          </a>
+          <a href="#" id="countHistoryMenuLink" onclick="openCountHistoryModal(); closeSettingsMenu(); return false;" style="display:none;">
+            🕘 Count History
+          </a>
+          <a href="#" onclick="openChangePasswordModal(); closeSettingsMenu(); return false;">🔑 Change Password</a>
+          <a href="#" onclick="executeLogout(); return false;">🚪 Sign Out</a>
+        </div>
+        <button class="settings-gear-btn" onclick="toggleSettingsMenu()">⚙️ Settings</button>
+      </div>
+    </aside>
+
+    <main class="main-viewport">
+      <header class="top-header">
+        <div class="metrics-group no-print">
+          <div class="stat-card">
+            <span class="stat-label">UNIQUE ITEMS</span>
+            <span id="uniqueCounter" class="stat-value">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">TOTAL COUNT</span>
+            <span id="totalCounter" class="stat-value">0</span>
+          </div>
+          <div>
+            <span class="branch-label">OFFICE BRANCH</span>
+            <select id="branchFilterSelect" class="branch-value-select" onchange="handleBranchFilterChange()">
+              <option value="ALL">ALL BRANCH</option>
+              <option value="NAGA" selected>NAGA BRANCH</option>
+              <option value="MAKATI">MAKATI BRANCH</option>
+            </select>
+          </div>
+        </div>
+        <div class="action-header-group no-print">
+          <button id="addNewAssetMasterBtn" onclick="openAssetInsertModal()" class="action-btn btn-green">+ ADD NEW ASSET</button>
+          <button onclick="printBlankCountSheet()" class="action-btn btn-purple-outline" id="blankCountSheetBtn">📝 BLANK COUNT SHEET</button>
+          <button onclick="openPhysicalCountModal()" class="action-btn btn-purple" id="physicalCountBtn">📋 PHYSICAL COUNT</button>
+          <button onclick="window.print()" class="action-btn btn-dark">🖨️ PRINT LIST</button>
+        </div>
+      </header>
+
+      <div class="filter-bar no-print">
+        <input type="text" id="globalSearch" onkeyup="searchAssets()" placeholder="Search assets..." class="search-input" />
+        <select id="conditionFilterSelect" class="condition-filter-select" onchange="searchAssets()">
+          <option value="ALL">ALL</option>
+          <option value="IN CONDITION">IN CONDITION</option>
+          <option value="DEFECTIVE">DEFECTIVE</option>
+          <option value="DISPOSED">DISPOSED</option>
+        </select>
+        <label class="group-toggle-label">
+          <input type="checkbox" id="groupByIssuedToCheckbox" onchange="searchAssets()" />
+          Group by Issued To
+        </label>
+      </div>
+      <div class="print-only-title">
+        <h2 id="printOnlyBranchTitle">INNOVPHIL ASSET LIST — NAGA BRANCH</h2>
+        <p id="printListDateStamp"></p>
+      </div>
+
+      <div class="data-container">
+        <div class="table-scroll-wrapper">
+          <div class="table-card">
+            <table>
+              <colgroup>
+                <col style="width: 110px" />
+                <col style="width: 150px" />
+                <col style="width: 110px" />
+                <col style="width: 180px" />
+                <col style="width: 130px" />
+                <col style="width: 140px" />
+                <col style="width: 120px" />
+                <col style="width: 90px" />
+                <col style="width: 140px" />
+                <col style="width: 100px" />
+                <col style="width: 150px" />
+                <col style="width: 130px" />
+                <col style="width: 90px" />
+                <col style="width: 120px" />
+                <col style="width: 100px" />
+                <col style="width: 120px" />
+                <col style="width: 120px" />
+                <col style="width: 140px" />
+                <col style="width: 130px" />
+                <col style="width: 120px" />
+                <col style="width: 120px" />
+                <col style="width: 160px" />
+                <col style="width: 150px" />
+              </colgroup>
+              <thead>
+                <tr class="header-category-row">
+                  <th colspan="8" class="cat-blue">ASSET INFO</th>
+                  <th colspan="3" class="cat-light-blue">DESIGNATION</th>
+                  <th colspan="6" class="cat-orange">PURCHASE HISTORY</th>
+                  <th colspan="5" class="cat-red">CUSTODIAN'S NOTE</th>
+                  <th rowspan="2" style="text-align: center; vertical-align: middle">ACTIONS</th>
+                </tr>
+                <tr class="header-main-row">
+                  <th>INNOV-ID</th>
+                  <th>NAME</th>
+                  <th>BRAND</th>
+                  <th>DESCRIPTION</th>
+                  <th>MODEL</th>
+                  <th>SERIAL NUMBER</th>
+                  <th>CATEGORY</th>
+                  <th>IMAGE</th>
+                  <th>ASSET</th>
+                  <th>BRANCH</th>
+                  <th>ISSUED TO</th>
+                  <th>DATE OF PURCHASE</th>
+                  <th>UNIT</th>
+                  <th>UNIT PRICE</th>
+                  <th>QUANTITY</th>
+                  <th>AMOUNT</th>
+                  <th>USEFUL LIFE</th>
+                  <th>CONDITION</th>
+                  <th>NOTE</th>
+                  <th>STATUS</th>
+                  <th>TRACKING DATE</th>
+                  <th>REMARKS</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <div id="assetDataModal" class="modal-backdrop no-print">
+      <div class="modal-box">
+        <h3 id="modalBoxTitle">Add Operational Asset Record</h3>
+        <input type="hidden" id="modalTargetIndexId" />
+        <div class="form-grid-2">
+          <div class="form-field">
+            <label>Asset ID</label>
+            <input type="text" id="formAssetId" placeholder="IPHL-APP-XXX" />
+          </div>
+          <div class="form-field">
+            <label>Asset Name</label>
+            <input type="text" id="formAssetName" />
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-field">
+            <label>Brand</label>
+            <input type="text" id="formAssetBrand" />
+          </div>
+          <div class="form-field">
+            <label>Model</label>
+            <input type="text" id="formAssetModel" />
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-field">
+            <label>Description</label>
+            <input type="text" id="formAssetDescription" />
+          </div>
+          <div class="form-field">
+            <label>Serial Number</label>
+            <input type="text" id="formAssetSerialNumber" />
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-field">
+            <label>Category</label>
+            <input type="text" id="formAssetItemCategory" placeholder="e.g. LAPTOP, CHAIR, MONITOR" />
+          </div>
+          <div class="form-field">
+            <label>Image</label>
+            <input type="file" id="formAssetImageFile" accept="image/*" onchange="previewAssetImageFile()" />
+            <input type="hidden" id="formAssetImageUrl" />
+            <img id="formAssetImagePreview" src="" alt="" style="display:none; margin-top:8px; width:70px; height:70px; object-fit:cover; border-radius:6px; border:1px solid #e2e8f0;" />
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-field">
+            <label>Asset</label>
+            <select id="formAssetCategory">
+              <option value="APPLIANCES">APPLIANCES</option>
+              <option value="FURNITURES & FIXTURES">FURNITURES & FIXTURES</option>
+              <option value="OFFICE SUPPLIES">OFFICE SUPPLIES</option>
+              <option value="IT EQUIPMENT">IT EQUIPMENT</option>
+              <option value="VEHICLE & OTHERS">VEHICLE & OTHERS</option>
+              <option value="AHA EQUIPMENT">AHA EQUIPMENT</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Branch</label>
+            <select id="formAssetBranch">
+              <option value="NAGA">NAGA</option>
+              <option value="MAKATI">MAKATI</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-field">
+            <label>Issued To</label>
+            <input type="text" id="formAssetIssuedTo" />
+          </div>
+          <div class="form-field">
+            <label>Date of Purchase</label>
+            <input type="date" id="formAssetPurchaseDate" />
+          </div>
+        </div>
+        <div class="form-grid-3">
+          <div class="form-field">
+            <label>Unit</label>
+            <input type="text" id="formAssetUnit" value="PIECE" />
+          </div>
+          <div class="form-field">
+            <label>Unit Price</label>
+            <input type="number" id="formAssetUnitPrice" value="0" oninput="calculateModalAmount()" />
+          </div>
+          <div class="form-field">
+            <label>Quantity</label>
+            <input type="number" id="formAssetQuantity" value="1" oninput="calculateModalAmount()" />
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-field">
+            <label>Total Amount</label>
+            <input type="text" id="formAssetAmount" readonly style="background: #f1f5f9" />
+          </div>
+          <div class="form-field">
+            <label>Useful Life</label>
+            <input type="text" id="formAssetUsefulLife" placeholder="e.g. 5 YEARS" />
+          </div>
+        </div>
+        <div class="form-grid-3">
+          <div class="form-field">
+            <label>Condition</label>
+            <select id="formAssetCondition">
+              <option value="IN CONDITION">IN CONDITION</option>
+              <option value="DEFECTIVE">DEFECTIVE</option>
+              <option value="DISPOSED">DISPOSED</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Note</label>
+            <select id="formAssetNote">
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="FOR DISPOSAL">FOR DISPOSAL</option>
+              <option value="LOST">LOST</option>
+              <option value="ARCHIVED">ARCHIVED</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Asset Status</label>
+            <select id="formAssetStatus">
+              <option value="IN USE">IN USE</option>
+              <option value="AVAILABLE">AVAILABLE</option>
+              <option value="APPROVED">APPROVED</option>
+              <option value="PENDING">PENDING</option>
+              <option value="REQUESTED">REQUESTED</option>
+              <option value="REPLENISHED">REPLENISHED</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-field">
+          <label>Tracking Date</label>
+          <input type="date" id="formAssetTrackingDate" />
+        </div>
+        <div class="modal-actions">
+          <button onclick="closeAssetModal()" class="action-btn" style="background: #e2e8f0; color: #334155">Cancel</button>
+          <button onclick="commitAssetStorageChange()" class="action-btn btn-dark">Save Changes</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="remarksDataModal" class="modal-backdrop no-print">
+      <div class="modal-box">
+        <h3>Modify Asset Financial Remarks</h3>
+        <input type="hidden" id="modalRemarksTargetId" />
+        <div class="form-field">
+          <label>Accounting Audit Notes / Remarks</label>
+          <input type="text" id="formRemarksFieldText" placeholder="Input tracking/audit remarks here..." />
+        </div>
+        <div class="modal-actions">
+          <button onclick="closeRemarksModal()" class="action-btn" style="background: #e2e8f0; color: #334155">Cancel</button>
+          <button onclick="commitAccountingRemarksChange()" class="action-btn btn-dark">Save Remarks</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="changePasswordModal" class="modal-backdrop no-print">
+      <div class="modal-box">
+        <h3>Change Password</h3>
+        <div class="form-field">
+          <label>Current Password</label>
+          <input type="password" id="changePwCurrent" />
+        </div>
+        <div class="form-field">
+          <label>New Password</label>
+          <input type="password" id="changePwNew" />
+        </div>
+        <div class="form-field">
+          <label>Confirm New Password</label>
+          <input type="password" id="changePwConfirm" />
+        </div>
+        <div id="changePwErrorMsg" class="auth-error" style="margin-bottom: 10px;"></div>
+        <div class="modal-actions">
+          <button onclick="closeChangePasswordModal()" class="action-btn" style="background: #e2e8f0; color: #334155">Cancel</button>
+          <button onclick="executeChangePassword()" class="action-btn btn-dark">Save New Password</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="countEntryModal" class="modal-backdrop no-print">
+      <div class="modal-box modal-box-wide">
+        <h3>Physical Count Entry</h3>
+        <div class="form-grid-2" style="margin-bottom: 16px">
+          <div class="form-field">
+            <label>Count Date</label>
+            <input type="date" id="countEntryDate" />
+          </div>
+          <div class="form-field">
+            <label>Scope</label>
+            <input type="text" id="countEntryScopeLabel" readonly style="background: #f1f5f9" />
+          </div>
+        </div>
+        <div class="count-entry-scroll">
+          <table class="count-entry-table">
+            <thead>
+              <tr>
+                <th>INNOV-ID</th>
+                <th>NAME</th>
+                <th>BRANCH</th>
+                <th>SYSTEM QTY</th>
+                <th>COUNTED QTY</th>
+                <th>VARIANCE</th>
+              </tr>
+            </thead>
+            <tbody id="countEntryTableBody"></tbody>
+          </table>
+        </div>
+        <div class="modal-actions">
+          <button onclick="closeCountEntryModal()" class="action-btn" style="background: #e2e8f0; color: #334155">Cancel</button>
+          <button onclick="saveAndPrintCount()" class="action-btn btn-dark">Save &amp; Print Count Sheet</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="deletedItemsModal" class="modal-backdrop no-print">
+      <div class="modal-box modal-box-wide">
+        <h3>🗑️ Deleted Items</h3>
+        <p style="font-size: 12px; color: #64748b; margin-bottom: 16px;">
+          Deleted assets are hidden from every page but are not permanently
+          erased. Restore an item to bring it back, or leave it here — only
+          the database owner can permanently remove it.
+        </p>
+        <div class="count-entry-scroll">
+          <table class="count-entry-table">
+            <thead>
+              <tr>
+                <th>INNOV-ID</th>
+                <th>NAME</th>
+                <th>CATEGORY</th>
+                <th>BRANCH</th>
+                <th>DELETED AT</th>
+                <th>ACTION</th>
+              </tr>
+            </thead>
+            <tbody id="deletedItemsTableBody"></tbody>
+          </table>
+        </div>
+        <div class="modal-actions">
+          <button onclick="closeDeletedItemsModal()" class="action-btn" style="background: #e2e8f0; color: #334155">Close</button>
+        </div>
+      </div>
+    </div>
+
+        <div id="countHistoryModal" class="modal-backdrop no-print">
+      <div class="modal-box modal-box-wide">
+        <h3>🕘 Physical Count History</h3>
+        <p style="font-size: 12px; color: #64748b; margin-bottom: 16px;">
+          Every physical count you save is locked here permanently and can
+          never be edited or overwritten — this is your official record.
+        </p>
+        <div class="count-entry-scroll">
+          <table class="count-entry-table">
+            <thead>
+              <tr>
+                <th>COUNT DATE</th>
+                <th>CATEGORY</th>
+                <th>BRANCH</th>
+                <th>COUNTED BY</th>
+                <th>ITEMS</th>
+                <th>MISMATCHES</th>
+                <th>SAVED AT</th>
+                <th>ACTION</th>
+              </tr>
+            </thead>
+            <tbody id="countHistoryTableBody"></tbody>
+          </table>
+        </div>
+        <div class="modal-actions">
+          <button onclick="closeCountHistoryModal()" class="action-btn" style="background: #e2e8f0; color: #334155">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="countHistoryDetailModal" class="modal-backdrop no-print">
+      <div class="modal-box modal-box-wide">
+        <h3>🕘 Physical Count Record</h3>
+        <p id="countHistoryDetailMeta" style="font-size: 12px; color: #64748b; margin-bottom: 16px;"></p>
+        <div class="count-entry-scroll">
+          <table class="count-entry-table">
+            <thead>
+              <tr>
+                <th>INNOV-ID</th>
+                <th>NAME</th>
+                <th>BRAND</th>
+                <th>CATEGORY</th>
+                <th>BRANCH</th>
+                <th>ISSUED TO</th>
+                <th>SYSTEM QTY</th>
+                <th>COUNTED QTY</th>
+                <th>VARIANCE</th>
+              </tr>
+            </thead>
+            <tbody id="countHistoryDetailTableBody"></tbody>
+          </table>
+        </div>
+        <div class="modal-actions">
+          <button onclick="closeCountHistoryDetailModal()" class="action-btn" style="background: #e2e8f0; color: #334155">Close</button>
+        </div>
+      </div>
+    </div>
+
+<div id="countSheetPrintArea" class="print-only-count">
+      <h2>INNOVPHIL PHYSICAL COUNT SHEET</h2>
+      <p id="countSheetMeta"></p>
+      <table class="count-sheet-table">
+        <thead>
+          <tr>
+            <th>INNOV-ID</th>
+            <th>NAME</th>
+            <th>BRAND</th>
+            <th>CATEGORY</th>
+            <th>BRANCH</th>
+            <th>ISSUED TO</th>
+            <th>SYSTEM QTY</th>
+            <th>COUNTED QTY</th>
+            <th>VARIANCE</th>
+          </tr>
+        </thead>
+        <tbody id="countSheetTableBody"></tbody>
+      </table>
+    </div>
+
+    <script>window.PAGE_CATEGORY = 'APPLIANCES';</script>
+    <script src="/shared/supabase-client.js"></script>
+    <script src="/shared/session.js"></script>
+    <script src="/shared/ui.js"></script>
+    <script src="/shared/data.js"></script>
+    <script src="/shared/table.js"></script>
+    <script src="/shared/asset-modal.js"></script>
+    <script src="/shared/deleted-items.js"></script>
+    <script src="/shared/physical-count.js"></script>
+    <script src="/shared/count-history.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        if (!requireAuth()) return;
+        applyRoleVisibility();
+        initTablePage();
+      });
+    </script>
+  </body>
+</html>
