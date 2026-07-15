@@ -33,6 +33,7 @@ async function printBlankCountSheet() {
       <td>${item.qty || 1}</td>
       <td style="min-width:70px;">&nbsp;</td>
       <td style="min-width:70px;">&nbsp;</td>
+      <td style="min-width:90px;">&nbsp;</td>
     `;
     tbody.appendChild(tr);
   });
@@ -83,6 +84,14 @@ async function openPhysicalCountModal() {
         />
       </td>
       <td id="variance-${item.id}" class="variance-zero">0</td>
+      <td>
+        <input
+          type="text"
+          data-asset-id="${item.id}"
+          class="countRemarksInput"
+          placeholder="Optional note..."
+        />
+      </td>
     `;
     tbody.appendChild(tr);
   });
@@ -123,9 +132,13 @@ async function saveAndPrintCount() {
     const countedQty = Number(input.value) || 0;
     const variance = countedQty - systemQty;
     const item = currentCountEntryRows.find((i) => i.id === assetId);
+    const remarksInput = document.querySelector(
+      `.countRemarksInput[data-asset-id="${assetId}"]`
+    );
+    const remarks = remarksInput ? remarksInput.value.trim() : '';
 
     countRecords.push({ asset_id: assetId, count_date: countDate, counted_qty: countedQty });
-    sheetRows.push({ ...item, systemQty, countedQty, variance });
+    sheetRows.push({ ...item, systemQty, countedQty, variance, remarks });
   });
 
   const { error } = await supabaseClient
@@ -171,6 +184,7 @@ function renderCountSheetPrintArea(countDate, sheetRows) {
       <td>${row.systemQty}</td>
       <td>${row.countedQty}</td>
       <td ${varianceClass}>${varianceText}</td>
+      <td>${row.remarks || '---'}</td>
     `;
     tbody.appendChild(tr);
   });

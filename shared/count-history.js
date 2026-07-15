@@ -121,6 +121,7 @@ function viewCountHistoryDetail(historyId) {
       <td>${row.systemQty}</td>
       <td>${row.countedQty}</td>
       <td class="${varianceClass}">${varianceText}</td>
+      <td>${row.remarks || '---'}</td>
     `;
     tbody.appendChild(tr);
   });
