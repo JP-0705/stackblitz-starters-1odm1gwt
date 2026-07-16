@@ -1,16 +1,26 @@
 async function executeSignup() {
   const errorMsg = document.getElementById('signupErrorMsg');
-  const email = document
-    .getElementById('signupEmail')
-    .value.trim()
-    .toLowerCase();
-  const password = document.getElementById('signupPassword').value;
-  const confirmPassword = document.getElementById(
-    'signupPasswordConfirm'
-  ).value;
+  const emailField = document.getElementById('signupEmail');
+  const passwordField = document.getElementById('signupPassword');
+  const confirmField = document.getElementById('signupPasswordConfirm');
+  const email = emailField.value.trim().toLowerCase();
+  const password = passwordField.value;
+  const confirmPassword = confirmField.value;
+
+  [emailField, passwordField, confirmField].forEach((f) =>
+    f.classList.remove('auth-input-error')
+  );
 
   if (!supabaseClient) {
     errorMsg.innerText = 'Not connected to the database. Check the console.';
+    errorMsg.style.display = 'block';
+    return;
+  }
+  if (!email || !password || !confirmPassword) {
+    emailField.classList.toggle('auth-input-error', !email);
+    passwordField.classList.toggle('auth-input-error', !password);
+    confirmField.classList.toggle('auth-input-error', !confirmPassword);
+    errorMsg.innerText = 'Please fill in all fields.';
     errorMsg.style.display = 'block';
     return;
   }
@@ -53,5 +63,6 @@ document.addEventListener('DOMContentLoaded', () => {
     field.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') executeSignup();
     });
+    field.addEventListener('input', () => field.classList.remove('auth-input-error'));
   });
 });

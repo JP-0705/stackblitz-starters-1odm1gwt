@@ -1,13 +1,23 @@
 async function executeLoginGate() {
-  const userIn = document
-    .getElementById('authEmail')
-    .value.trim()
-    .toLowerCase();
-  const passIn = document.getElementById('authPassword').value;
+  const emailField = document.getElementById('authEmail');
+  const passwordField = document.getElementById('authPassword');
+  const userIn = emailField.value.trim().toLowerCase();
+  const passIn = passwordField.value;
   const errorMsg = document.getElementById('authErrorMsg');
+
+  emailField.classList.remove('auth-input-error');
+  passwordField.classList.remove('auth-input-error');
 
   if (!supabaseClient) {
     errorMsg.innerText = 'Not connected to the database. Check the console.';
+    errorMsg.style.display = 'block';
+    return;
+  }
+
+  if (!userIn || !passIn) {
+    emailField.classList.toggle('auth-input-error', !userIn);
+    passwordField.classList.toggle('auth-input-error', !passIn);
+    errorMsg.innerText = 'Please enter both your email and password.';
     errorMsg.style.display = 'block';
     return;
   }
@@ -30,7 +40,7 @@ async function executeLoginGate() {
     sessionStorage.setItem('ACTIVE_SESSION', JSON.stringify(session));
     window.location.href = '/dashboard/';
   } else {
-    errorMsg.innerText = 'Invalid access payload permissions.';
+    errorMsg.innerText = 'Incorrect email or password';
     errorMsg.style.display = 'block';
   }
 }
@@ -40,6 +50,7 @@ const passwordField = document.getElementById('authPassword');
   field.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') executeLoginGate();
   });
+  field.addEventListener('input', () => field.classList.remove('auth-input-error'));
 });
 
 // If already logged in, skip straight to the dashboard.
