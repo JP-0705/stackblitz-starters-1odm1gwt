@@ -21,7 +21,7 @@
         your administrator to create your account directly.
       </p>
       <input
-        type="text"
+        type="email"
         id="signupEmail"
         class="auth-input"
         placeholder="Email"
@@ -46,7 +46,10 @@
       </p>
     </div>
 
+    <div id="toastContainer" class="toast-container no-print"></div>
+
     <script src="/shared/supabase-client.js"></script>
+    <script src="/shared/ui.js"></script>
     <script src="/create-account/signup.js"></script>
   </body>
 </html>

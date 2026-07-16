@@ -7,6 +7,28 @@ function calculateModalAmount() {
   document.getElementById('formAssetAmount').value = '₱ ' + (price * qty).toLocaleString();
 }
 
+// Remembers whatever image URL was on the asset when the modal was opened,
+// so Save Changes can tell whether that file needs deleting from storage
+// (removed entirely, or swapped for a newly uploaded one). Clicking Remove
+// or picking a new file does NOT touch storage by itself — nothing is
+// deleted unless Save Changes actually goes through, so Cancel is safe.
+let originalAssetImageUrl = '';
+
+// Deletes a previously-uploaded image from the "asset-images" storage
+// bucket. Best-effort: if it fails, the asset record itself is already
+// saved fine, so this only logs rather than blocking the user.
+async function deleteAssetImageFromStorage(url) {
+  if (!url) return;
+  const marker = '/asset-images/';
+  const idx = url.indexOf(marker);
+  if (idx === -1) return;
+  const filePath = decodeURIComponent(url.slice(idx + marker.length));
+  const { error } = await supabaseClient.storage.from('asset-images').remove([filePath]);
+  if (error) {
+    console.error('Failed to delete old asset image from storage:', error);
+  }
+}
+
 // Shows an instant local preview of a newly chosen image, before it's
 // actually uploaded (upload only happens once "Save Changes" is clicked).
 function previewAssetImageFile() {
@@ -31,6 +53,7 @@ function removeAssetImage() {
 }
 
 function openAssetInsertModal() {
+  originalAssetImageUrl = '';
   document.getElementById('modalBoxTitle').innerText = 'Add Operational Asset Record';
   document.getElementById('modalTargetIndexId').value = '';
   document.getElementById('formAssetId').disabled = false;
@@ -71,6 +94,7 @@ async function openAssetEditModal(assetId) {
   const item = db.find((i) => i.id === assetId);
   if (!item) return;
 
+  originalAssetImageUrl = item.imageUrl || '';
   document.getElementById('modalBoxTitle').innerText = 'Edit Master Asset Columns';
   document.getElementById('modalTargetIndexId').value = assetId;
   document.getElementById('formAssetId').value = item.id;
@@ -203,6 +227,12 @@ async function commitAssetStorageChange() {
       console.error('Supabase update error:', error);
       return alert('Failed to update asset:\n\n' + error.message);
     }
+  }
+
+  // Now that the asset record itself is safely saved, clean up the old
+  // photo in storage if it was removed or replaced by a new one.
+  if (originalAssetImageUrl && originalAssetImageUrl !== imageUrl) {
+    await deleteAssetImageFromStorage(originalAssetImageUrl);
   }
 
   closeAssetModal();

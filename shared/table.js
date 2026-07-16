@@ -3,7 +3,7 @@
 // script loads: 'ALL' for the dashboard, or e.g. 'APPLIANCES' for a
 // specific category page.
 let currentCategoryFilter = window.PAGE_CATEGORY || 'ALL';
-let currentBranchFilter = 'NAGA';
+let currentBranchFilter = 'ALL';
 
 function handleBranchFilterChange() {
   currentBranchFilter = document.getElementById('branchFilterSelect').value;

@@ -14,6 +14,12 @@ async function executeSignup() {
     errorMsg.style.display = 'block';
     return;
   }
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailPattern.test(email)) {
+    errorMsg.innerText = 'Please enter a valid email address (e.g. name@company.com).';
+    errorMsg.style.display = 'block';
+    return;
+  }
   if (password !== confirmPassword) {
     errorMsg.innerText = 'Passwords do not match.';
     errorMsg.style.display = 'block';
@@ -32,8 +38,10 @@ async function executeSignup() {
     return;
   }
 
-  alert('Account created! You can now log in as a viewer.');
-  window.location.href = '/login/';
+  showToast('Account created! You can now log in as a viewer.', 'success');
+  setTimeout(() => {
+    window.location.href = '/login/';
+  }, 1500);
 }
 document.addEventListener('DOMContentLoaded', () => {
   const fields = [

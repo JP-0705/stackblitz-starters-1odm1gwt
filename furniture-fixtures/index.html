@@ -44,6 +44,18 @@
   </head>
   <body>
     <button id="sidebarToggleBtn" class="sidebar-toggle-btn no-print" onclick="toggleSidebar()" title="Toggle sidebar">☰</button>
+    <div id="toastContainer" class="toast-container no-print"></div>
+
+    <div id="customConfirmModal" class="modal-backdrop no-print">
+      <div class="modal-box" style="max-width: 420px;">
+        <h3 id="customConfirmTitle">Please Confirm</h3>
+        <p id="customConfirmMessage" style="white-space: pre-line; color: #334155; font-size: 14px; margin-bottom: 20px;"></p>
+        <div class="modal-actions">
+          <button id="customConfirmCancelBtn" class="action-btn" style="background: #e2e8f0; color: #334155">Cancel</button>
+          <button id="customConfirmOkBtn" class="action-btn" style="color: #fff;">OK</button>
+        </div>
+      </div>
+    </div>
 
     <aside class="sidebar no-print" id="mainSidebar">
       <div>
@@ -92,8 +104,8 @@
           <div>
             <span class="branch-label">OFFICE BRANCH</span>
             <select id="branchFilterSelect" class="branch-value-select" onchange="handleBranchFilterChange()">
-              <option value="ALL">ALL BRANCH</option>
-              <option value="NAGA" selected>NAGA BRANCH</option>
+              <option value="ALL" selected>ALL BRANCH</option>
+              <option value="NAGA">NAGA BRANCH</option>
               <option value="MAKATI">MAKATI BRANCH</option>
             </select>
           </div>
@@ -120,7 +132,7 @@
         </label>
       </div>
       <div class="print-only-title">
-        <h2 id="printOnlyBranchTitle">INNOVPHIL ASSET LIST — NAGA BRANCH</h2>
+        <h2 id="printOnlyBranchTitle">INNOVPHIL ASSET LIST — ALL BRANCH</h2>
         <p id="printListDateStamp"></p>
       </div>
 
@@ -427,6 +439,7 @@
                 <th>NAME</th>
                 <th>CATEGORY</th>
                 <th>BRANCH</th>
+                <th>DELETED BY</th>
                 <th>DELETED AT</th>
                 <th>ACTION</th>
               </tr>

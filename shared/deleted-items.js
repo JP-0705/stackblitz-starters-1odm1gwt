@@ -5,12 +5,19 @@
 async function deleteAssetRecord(assetId) {
   if (!supabaseClient)
     return alert('Not connected to the database. Check the console for details.');
-  if (!confirm(`Move asset ${assetId} to Deleted Items?\n\nIt will be hidden from the dashboard but can be restored later from Settings.`))
-    return;
+  const confirmed = await showConfirm(
+    `Move asset ${assetId} to Deleted Items?\n\nIt will be hidden from the dashboard but can be restored later from Settings.`,
+    { title: '🗑️ Delete Asset', confirmLabel: 'Delete', confirmColor: '#dc2626' }
+  );
+  if (!confirmed) return;
 
   const { error } = await supabaseClient
     .from('assets')
-    .update({ is_deleted: true, deleted_at: new Date().toISOString() })
+    .update({
+      is_deleted: true,
+      deleted_at: new Date().toISOString(),
+      deleted_by: activeUserSession ? activeUserSession.email : null,
+    })
     .eq('id', assetId);
   if (error) {
     console.error('Supabase soft-delete error:', error);
@@ -22,11 +29,16 @@ async function deleteAssetRecord(assetId) {
 async function restoreAssetRecord(assetId) {
   if (!supabaseClient)
     return alert('Not connected to the database. Check the console for details.');
-  if (!confirm(`Restore asset ${assetId} back to the active list?`)) return;
+  const confirmed = await showConfirm(`Restore asset ${assetId} back to the active list?`, {
+    title: '♻️ Restore Asset',
+    confirmLabel: 'Restore',
+    confirmColor: '#0b1d33',
+  });
+  if (!confirmed) return;
 
   const { error } = await supabaseClient
     .from('assets')
-    .update({ is_deleted: false, deleted_at: null })
+    .update({ is_deleted: false, deleted_at: null, deleted_by: null })
     .eq('id', assetId);
   if (error) {
     console.error('Supabase restore error:', error);
@@ -48,13 +60,13 @@ function closeDeletedItemsModal() {
 
 async function renderDeletedItemsTable() {
   const tbody = document.getElementById('deletedItemsTableBody');
-  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94a3b8;">Loading…</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#94a3b8;">Loading…</td></tr>';
 
   const deletedRows = await fetchDeletedAssetRows();
 
   if (deletedRows.length === 0) {
     tbody.innerHTML =
-      '<tr><td colspan="6" style="text-align:center; color:#94a3b8;">No deleted items.</td></tr>';
+      '<tr><td colspan="7" style="text-align:center; color:#94a3b8;">No deleted items.</td></tr>';
     return;
   }
 
@@ -69,6 +81,7 @@ async function renderDeletedItemsTable() {
       <td>${item.name}</td>
       <td style="font-size:11px; color:#64748b;">${item.category}</td>
       <td>${item.branch || 'NAGA'}</td>
+      <td style="font-size:12px;">${item.deletedBy || '---'}</td>
       <td style="font-size:12px;">${deletedAtDisplay}</td>
       <td>
         <button onclick="restoreAssetRecord('${item.id}')" class="btn-table btn-edit-rem">♻️ Restore</button>

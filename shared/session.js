@@ -86,5 +86,5 @@ async function executeChangePassword() {
   }
 
   closeChangePasswordModal();
-  alert('Password updated successfully.');
+  showToast('Password updated successfully.', 'success');
 }

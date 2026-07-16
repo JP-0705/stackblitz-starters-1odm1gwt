@@ -1,9 +1,10 @@
 // Shared data layer — backed by the Supabase "assets" table.
 // NOTE: the "assets" table needs "condition", "note", "useful_life",
 // "is_deleted" (boolean, default false), "deleted_at" (timestamptz),
-// "item_category" (text — free-form sub-type like "LAPTOP", "CHAIR"),
-// and "image_url" (text — public URL of an uploaded reference photo)
-// columns for these fields / soft-delete to work.
+// "deleted_by" (text — email of whoever deleted it), "item_category"
+// (text — free-form sub-type like "LAPTOP", "CHAIR"), and "image_url"
+// (text — public URL of an uploaded reference photo) columns for these
+// fields / soft-delete to work.
 function mapRowFromDb(row) {
   return {
     id: row.id,
@@ -30,6 +31,7 @@ function mapRowFromDb(row) {
     trackingDate: row.tracking_date,
     isDeleted: row.is_deleted,
     deletedAt: row.deleted_at,
+    deletedBy: row.deleted_by,
   };
 }
 
