@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Analytics - IMS</title>
+    <title>Analytics — Innovphil Asset Portal</title>
     <link rel="stylesheet" href="/shared/styles.css" />
     <script
       src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
@@ -46,6 +46,42 @@
     <button id="sidebarToggleBtn" class="sidebar-toggle-btn no-print" onclick="toggleSidebar()" title="Toggle sidebar">☰</button>
     <div id="toastContainer" class="toast-container no-print"></div>
 
+    <div id="aboutModal" class="modal-backdrop no-print" onclick="if(event.target===this) closeAboutModal()">
+      <div class="modal-box" style="max-width: 420px; text-align: center;">
+        <img
+          src="https://i.ibb.co/mVgtpqGB/INNOVPHIL-LOGO-Blue.png"
+          alt="Innovphil"
+          style="width: 56px; margin-bottom: 12px;"
+        />
+        <h3 style="margin-bottom: 4px;">Innovphil Asset Portal</h3>
+        <p style="font-size: 13px; color: #64748b; margin-bottom: 14px;">
+          Inventory Management System
+        </p>
+        <p style="text-align: left; font-size: 13px; color: #334155; line-height: 1.7; margin-bottom: 16px;">
+          This system serves as the official digital record of all Innovphil
+          properties and inventories — appliances, furniture &amp; fixtures,
+          office supplies, IT equipment, vehicles, and AHA equipment — across
+          the Naga and Makati branches. Every item's purchase history, current
+          custodian, condition, and physical count records are maintained
+          here to support accurate asset tracking, accounting, and audits.
+        </p>
+        <div style="text-align: left; font-size: 13px; color: #334155; line-height: 1.8; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; padding: 14px 0; margin-bottom: 16px;">
+          <div><strong>Version:</strong> 1.0.0</div>
+          <div><strong>Developed by:</strong> Innovphil IT Department</div>
+          <div><strong>Branches:</strong> Naga &amp; Makati</div>
+          <div><strong>Concerns/Discrepancies:</strong> Contact the IT Department</div>
+        </div>
+        <p style="font-size: 11px; color: #94a3b8; margin-bottom: 20px;">
+          © 2026 Innovphil. All rights reserved.<br />
+          This system and its contents are proprietary to Innovphil and are
+          intended for internal use only.
+        </p>
+        <div class="modal-actions" style="justify-content: center;">
+          <button onclick="closeAboutModal()" class="action-btn" style="background: #e2e8f0; color: #334155">Close</button>
+        </div>
+      </div>
+    </div>
+
     <div id="customConfirmModal" class="modal-backdrop no-print">
       <div class="modal-box" style="max-width: 420px;">
         <h3 id="customConfirmTitle">Please Confirm</h3>
@@ -84,6 +120,7 @@
             🕘 Count History
           </a>
           <a href="#" onclick="openChangePasswordModal(); closeSettingsMenu(); return false;">🔑 Change Password</a>
+          <a href="#" onclick="openAboutModal(); closeSettingsMenu(); return false;">ℹ️ About</a>
           <a href="#" onclick="executeLogout(); return false;">🚪 Sign Out</a>
         </div>
         <button class="settings-gear-btn" onclick="toggleSettingsMenu()">⚙️ Settings</button>
@@ -253,7 +290,7 @@
             <input type="text" id="formAssetAmount" readonly style="background: #f1f5f9" />
           </div>
           <div class="form-field">
-            <label>Useful Life</label>
+            <label>Useful Life (Total, from Purchase Date)</label>
             <input type="text" id="formAssetUsefulLife" placeholder="e.g. 5 YEARS" />
           </div>
         </div>

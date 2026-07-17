@@ -186,7 +186,7 @@ body.sidebar-collapsed .sidebar-toggle-btn { left: 0; }
 .branch-value-select:hover { background: #f1f5f9; }
 .branch-value-select:focus { outline: 2px solid #cbd5e1; }
 .action-header-group { display: flex; gap: 10px; }
-.action-btn { border: none; padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; }
+.action-btn { border: none; padding: 10px 16px; border-radius: 8px; font-size: 10px; font-weight: 700; cursor: pointer; }
 .btn-dark { background: #1e293b; color: #fff; }
 .btn-purple { background: #6d28d9; color: #fff; }
 .btn-purple-outline { background: #fff; color: #6d28d9; border: 2px solid #6d28d9; }
@@ -243,7 +243,7 @@ body.sidebar-collapsed .sidebar-toggle-btn { left: 0; }
   border-radius: 12px;
   border: 1px solid #e2e8f0;
 }
-.table-card { background: #fff; min-width: 2950px; }
+.table-card { background: #fff; min-width: 3020px; }
 table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; table-layout: fixed; }
 
 thead { position: sticky; top: 0; z-index: 20; color: #fff; }

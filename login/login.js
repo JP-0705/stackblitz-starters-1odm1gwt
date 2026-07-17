@@ -40,7 +40,7 @@ async function executeLoginGate() {
     sessionStorage.setItem('ACTIVE_SESSION', JSON.stringify(session));
     window.location.href = '/dashboard/';
   } else {
-    errorMsg.innerText = 'Incorrect email or password';
+    errorMsg.innerText = 'Invalid access payload permissions.';
     errorMsg.style.display = 'block';
   }
 }

@@ -5,6 +5,46 @@
 let currentCategoryFilter = window.PAGE_CATEGORY || 'ALL';
 let currentBranchFilter = 'ALL';
 
+// Age is calculated live from the purchase date, the same way remaining
+// useful life is — no field to update by hand, it just counts up on its
+// own every year.
+function calculateAssetAge(purchaseDate) {
+  if (!purchaseDate) return '---';
+  const purchase = new Date(purchaseDate);
+  if (isNaN(purchase.getTime())) return '---';
+
+  const ageYears = (Date.now() - purchase.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
+  if (ageYears < 1) {
+    const ageMonths = Math.max(1, Math.round(ageYears * 12));
+    return `${ageMonths} MONTH${ageMonths === 1 ? '' : 'S'}`;
+  }
+  const ageYearsRounded = Math.round(ageYears);
+  return `${ageYearsRounded} YEAR${ageYearsRounded === 1 ? '' : 'S'}`;
+}
+
+// "Useful Life" is entered once as the item's TOTAL lifespan (e.g. "5
+// YEARS") and is never edited again — the REMAINING life shown in the
+// table is calculated live from that total and the purchase date, so it
+// counts down on its own every year without anyone updating it by hand.
+function calculateRemainingUsefulLife(purchaseDate, totalUsefulLifeText) {
+  if (!totalUsefulLifeText) return '---';
+  const totalYearsMatch = String(totalUsefulLifeText).match(/\d+(\.\d+)?/);
+  if (!totalYearsMatch) return totalUsefulLifeText; // not a recognizable "N years" value
+  if (!purchaseDate) return totalUsefulLifeText; // no purchase date to calculate age from
+
+  const totalYears = parseFloat(totalYearsMatch[0]);
+  const purchase = new Date(purchaseDate);
+  if (isNaN(purchase.getTime())) return totalUsefulLifeText;
+
+  const ageYears = (Date.now() - purchase.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
+  const remaining = totalYears - ageYears;
+
+  if (remaining <= 0) return 'EXPIRED';
+  const remainingRounded = Math.round(remaining);
+  if (remainingRounded < 1) return '< 1 YEAR LEFT';
+  return `${remainingRounded} YEAR${remainingRounded === 1 ? '' : 'S'} LEFT`;
+}
+
 function handleBranchFilterChange() {
   currentBranchFilter = document.getElementById('branchFilterSelect').value;
   const branchLabelText =
@@ -55,7 +95,7 @@ function renderTableRows(dataRows, groupByIssuedTo = false) {
   tbody.innerHTML = '';
   let lastIssuedTo = null;
 
-  const TOTAL_TABLE_COLUMNS = 23;
+  const TOTAL_TABLE_COLUMNS = 24;
 
   dataRows.forEach((item) => {
     if (groupByIssuedTo) {
@@ -124,6 +164,10 @@ function renderTableRows(dataRows, groupByIssuedTo = false) {
       ? `<img src="${item.imageUrl}" alt="${item.name || 'asset'}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; cursor:pointer;" onclick="showAssetImagePreview('${item.imageUrl}', '${(item.name || 'Asset').replace(/'/g, "\\'")}')" />`
       : '<span style="color:#94a3b8; font-size:11px;">No Image</span>';
 
+    const remainingLife = calculateRemainingUsefulLife(item.purchaseDate, item.usefulLife);
+    const remainingLifeStyle =
+      remainingLife === 'EXPIRED' ? 'color:#dc2626; font-weight:700;' : '';
+
     row.innerHTML = `
       <td style="font-family:monospace; font-weight:700; color:#0f172a;">${item.id}</td>
       <td style="font-weight:600;">${item.name}</td>
@@ -141,7 +185,8 @@ function renderTableRows(dataRows, groupByIssuedTo = false) {
       <td>₱ ${Number(item.unitPrice || 0).toLocaleString()}</td>
       <td>${item.qty || 1}</td>
       <td style="font-weight:600;">₱ ${Number(item.amount || 0).toLocaleString()}</td>
-      <td>${item.usefulLife || '---'}</td>
+      <td style="${remainingLifeStyle}">${remainingLife}</td>
+      <td>${calculateAssetAge(item.purchaseDate)}</td>
       <td><span class="status-pill ${conditionClass}">${item.condition || 'IN CONDITION'}</span></td>
       <td><span class="status-pill ${noteClass}">${item.note || 'ACTIVE'}</span></td>
       <td><span class="status-pill ${statusClass}">${item.status || 'IN USE'}</span></td>

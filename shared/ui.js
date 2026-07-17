@@ -35,6 +35,16 @@ function closeAssetImagePreview() {
   document.getElementById('imagePreviewImg').src = '';
 }
 
+function openAboutModal() {
+  const modal = document.getElementById('aboutModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeAboutModal() {
+  const modal = document.getElementById('aboutModal');
+  if (modal) modal.style.display = 'none';
+}
+
 // Lightweight, non-blocking success/error notification — replaces native
 // alert() for messages that don't need the user to stop and click OK.
 // type: 'success' | 'error' | 'info'
