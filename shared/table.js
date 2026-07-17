@@ -13,13 +13,23 @@ function calculateAssetAge(purchaseDate) {
   const purchase = new Date(purchaseDate);
   if (isNaN(purchase.getTime())) return '---';
 
-  const ageYears = (Date.now() - purchase.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
-  if (ageYears < 1) {
-    const ageMonths = Math.max(1, Math.round(ageYears * 12));
-    return `${ageMonths} MONTH${ageMonths === 1 ? '' : 'S'}`;
+  const ageDays = (Date.now() - purchase.getTime()) / (1000 * 60 * 60 * 24);
+
+  if (ageDays < 1) return 'TODAY';
+  if (ageDays < 7) {
+    const days = Math.round(ageDays);
+    return `${days} DAY${days === 1 ? '' : 'S'}`;
   }
-  const ageYearsRounded = Math.round(ageYears);
-  return `${ageYearsRounded} YEAR${ageYearsRounded === 1 ? '' : 'S'}`;
+  if (ageDays < 30) {
+    const weeks = Math.round(ageDays / 7);
+    return `${weeks} WEEK${weeks === 1 ? '' : 'S'}`;
+  }
+  if (ageDays < 365) {
+    const months = Math.round(ageDays / 30.44);
+    return `${months} MONTH${months === 1 ? '' : 'S'}`;
+  }
+  const years = Math.round(ageDays / 365.25);
+  return `${years} YEAR${years === 1 ? '' : 'S'}`;
 }
 
 // "Useful Life" is entered once as the item's TOTAL lifespan (e.g. "5
