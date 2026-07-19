@@ -139,6 +139,11 @@ function renderTableRows(dataRows, groupByIssuedTo = false) {
         }
         ${
           isAdmin
+            ? `<button onclick="openAssetEditHistoryModal('${item.id}')" class="btn-table btn-edit-rem">🕘 History</button>`
+            : ''
+        }
+        ${
+          isAdmin
             ? `<button onclick="deleteAssetRecord('${item.id}')" class="btn-table" style="background:#fee2e2; color:#b91c1c;">🗑️ Del</button>`
             : ''
         }

@@ -14,6 +14,12 @@ function calculateModalAmount() {
 // deleted unless Save Changes actually goes through, so Cancel is safe.
 let originalAssetImageUrl = '';
 
+// Snapshot of the asset as it looked when the Edit modal was opened, used
+// to diff against on Save so we know exactly which fields changed (for
+// the edit-history audit trail in shared/edit-history.js). Null when
+// adding a brand-new asset, since there's nothing to diff against.
+let originalAssetSnapshot = null;
+
 // Deletes a previously-uploaded image from the "asset-images" storage
 // bucket. Best-effort: if it fails, the asset record itself is already
 // saved fine, so this only logs rather than blocking the user.
@@ -54,6 +60,7 @@ function removeAssetImage() {
 
 function openAssetInsertModal() {
   originalAssetImageUrl = '';
+  originalAssetSnapshot = null;
   document.getElementById('modalBoxTitle').innerText = 'Add Operational Asset Record';
   document.getElementById('modalTargetIndexId').value = '';
   document.getElementById('formAssetId').disabled = false;
@@ -95,6 +102,7 @@ async function openAssetEditModal(assetId) {
   if (!item) return;
 
   originalAssetImageUrl = item.imageUrl || '';
+  originalAssetSnapshot = { ...item };
   document.getElementById('modalBoxTitle').innerText = 'Edit Master Asset Columns';
   document.getElementById('modalTargetIndexId').value = assetId;
   document.getElementById('formAssetId').value = item.id;
@@ -227,6 +235,7 @@ async function commitAssetStorageChange() {
       console.error('Supabase update error:', error);
       return alert('Failed to update asset:\n\n' + error.message);
     }
+    await logAssetFieldChanges(targetId, originalAssetSnapshot, commonFields);
   }
 
   // Now that the asset record itself is safely saved, clean up the old
@@ -242,11 +251,14 @@ async function commitAssetStorageChange() {
 // ---------------------------------------------------------------------------
 // ACCOUNTING REMARKS MODAL
 // ---------------------------------------------------------------------------
+let originalRemarksValue = '';
+
 async function openRemarksEditModal(assetId) {
   const db = await fetchBackendDataRows();
   const item = db.find((i) => i.id === assetId);
   if (!item) return;
 
+  originalRemarksValue = item.remarks || '';
   document.getElementById('modalRemarksTargetId').value = assetId;
   document.getElementById('formRemarksFieldText').value = item.remarks || '';
   document.getElementById('remarksDataModal').style.display = 'flex';
@@ -270,6 +282,8 @@ async function commitAccountingRemarksChange() {
   if (error) {
     console.error('Supabase remarks update error:', error);
     alert('Failed to save remarks:\n\n' + error.message);
+  } else {
+    await logAssetFieldChanges(targetId, { remarks: originalRemarksValue }, { remarks: newRemarks });
   }
 
   closeRemarksModal();

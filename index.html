@@ -8,75 +8,148 @@
       * { box-sizing: border-box; }
       html, body {
         margin: 0;
-        height: 100%;
-        background: #06101f;
-        overflow: hidden;
+        min-height: 100%;
       }
       body {
+        min-height: 100vh;
         display: flex;
         align-items: center;
         justify-content: center;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        position: relative;
+        overflow: hidden;
+
+        /* Base color for now — swap this for your own background image
+           whenever you're ready, e.g.:
+           background: #060b14 url('your-image.jpg') center/cover no-repeat;
+           If you go with a photo/light background, also see the two
+           notes below (".bg-decor" and ".hero-logo") for what to remove. */
+        background: #0b1d33;
       }
 
-      .splash {
+      /* ============================================================
+         BACKGROUND DECORATION — everything in this block is purely
+         decorative and safe to delete as one piece if you replace the
+         background with your own image/design instead.
+         ============================================================ */
+      .bg-decor {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+      }
+      .bg-glow {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 900px;
+        height: 900px;
+        transform: translate(-50%, -50%);
+        background: radial-gradient(circle, rgba(59, 91, 253, 0.16), transparent 70%);
+        filter: blur(10px);
+      }
+      /* Faint barcode-stripe texture — a nod to what this system actually
+         does (scanning/tracking assets), rather than a generic tech grid. */
+      .bg-barcode {
+        position: absolute;
+        inset: 0;
+        opacity: 0.05;
+        background-image: repeating-linear-gradient(
+          90deg,
+          #fff 0px, #fff 1px, transparent 1px, transparent 5px,
+          #fff 5px, #fff 6px, transparent 6px, transparent 16px,
+          #fff 16px, #fff 18px, transparent 18px, transparent 24px,
+          #fff 24px, #fff 25px, transparent 25px, transparent 34px
+        );
+        -webkit-mask-image: radial-gradient(ellipse at center, black, transparent 72%);
+        mask-image: radial-gradient(ellipse at center, black, transparent 72%);
+      }
+   
+      .hero {
+        position: relative;
+        z-index: 1;
         display: flex;
         flex-direction: column;
         align-items: center;
         text-align: center;
-        animation: splashOut 0.6s ease 2.6s forwards;
+        padding: 24px;
       }
 
-      .splash-logo {
-        width: 96px;
+      .hero-logo {
+        width: 92px;
         height: auto;
-        /* Recolors the existing navy logo asset to white for the dark splash background */
-        filter: brightness(0) invert(1);
+        /* Recolors the existing navy logo asset to white for the dark
+           background. Remove this filter if your new background is light. */
+        filter: brightness(0) invert(1) drop-shadow(0 0 18px rgba(76, 111, 255, 0.35));
         opacity: 0;
         transform: scale(0.6);
-        animation: logoIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s forwards;
+        animation: logoIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.35s forwards;
       }
 
-      .splash-word {
-        margin-top: 18px;
-        font-size: 30px;
+      .hero-word {
+        margin-top: 20px;
+        font-size: 34px;
         font-weight: 800;
-        letter-spacing: 2px;
-        color: #fff;
+        letter-spacing: 3px;
+        background: linear-gradient(180deg, #ffffff, #aebde4);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
         opacity: 0;
         transform: translateY(10px);
-        animation: fadeUp 0.6s ease 0.45s forwards;
-      }
-
-      .splash-tagline {
-        margin-top: 8px;
-        font-size: 13px;
-        letter-spacing: 1px;
-        color: #93a3bd;
-        opacity: 0;
-        transform: translateY(8px);
         animation: fadeUp 0.6s ease 0.7s forwards;
       }
 
-      .splash-bar {
-        margin-top: 28px;
-        width: 120px;
-        height: 3px;
-        border-radius: 3px;
-        background: rgba(255, 255, 255, 0.12);
-        overflow: hidden;
+      .hero-tagline {
+        margin-top: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 2.5px;
+        color: #7c8bab;
         opacity: 0;
-        animation: fadeUp 0.6s ease 0.95s forwards;
+        transform: translateY(8px);
+        animation: fadeUp 0.6s ease 0.9s forwards;
       }
-      .splash-bar::after {
-        content: '';
-        display: block;
-        height: 100%;
-        width: 40%;
-        border-radius: 3px;
-        background: #4c6fff;
-        animation: barSlide 1.3s ease-in-out 1.1s infinite;
+
+      .hero-rule {
+        margin-top: 22px;
+        width: 40px;
+        height: 2px;
+        border-radius: 2px;
+        background: linear-gradient(90deg, transparent, #4c6fff, transparent);
+        opacity: 0;
+        animation: fadeUp 0.6s ease 1.05s forwards;
       }
+
+      .hero-btn {
+        margin-top: 26px;
+        padding: 14px 38px;
+        border: none;
+        border-radius: 8px;
+        background: #fff;
+        color: #06101f;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        opacity: 0;
+        transform: translateY(8px);
+        animation: fadeUp 0.6s ease 1.2s forwards;
+        transition: background 0.15s ease, transform 0.05s ease, box-shadow 0.2s ease;
+      }
+      .hero-btn:hover {
+        background: #eef2ff;
+        box-shadow: 0 0 0 6px rgba(76, 111, 255, 0.14);
+      }
+      .hero-btn:active { background: #dde5ff; transform: scale(0.98); }
+      .hero-btn:focus-visible { outline: 2px solid #4c6fff; outline-offset: 3px; }
+      .hero-btn-arrow {
+        transition: transform 0.2s ease;
+      }
+      .hero-btn:hover .hero-btn-arrow { transform: translateX(3px); }
 
       @keyframes logoIn {
         to { opacity: 1; transform: scale(1); }
@@ -84,36 +157,50 @@
       @keyframes fadeUp {
         to { opacity: 1; transform: translateY(0); }
       }
-      @keyframes barSlide {
-        0% { transform: translateX(-120%); }
-        50% { transform: translateX(80%); }
-        100% { transform: translateX(220%); }
+      @keyframes scanSweep {
+        0% { top: -5%; opacity: 0; }
+        12% { opacity: 1; }
+        88% { opacity: 1; }
+        100% { top: 105%; opacity: 0; }
       }
-      @keyframes splashOut {
-        to { opacity: 0; transform: scale(1.03); }
+
+      @media (prefers-reduced-motion: reduce) {
+        .hero-logo, .hero-word, .hero-tagline, .hero-rule, .hero-btn {
+          animation: none !important;
+          opacity: 1 !important;
+          transform: none !important;
+        }
+        .scan-sweep { display: none; }
       }
     </style>
   </head>
   <body>
-    <div class="splash">
+    <div class="bg-decor">
+      <div class="bg-glow"></div>
+      <div class="bg-barcode"></div>
+      <div class="scan-sweep"></div>
+    </div>
+
+    <div class="hero">
       <img
-        class="splash-logo"
+        class="hero-logo"
         src="https://i.ibb.co/mVgtpqGB/INNOVPHIL-LOGO-Blue.png"
         alt="Innovphil"
       />
-      <div class="splash-word">INNOVPHIL</div>
-      <div class="splash-tagline">INVENTORY MANAGEMENT SYSTEM</div>
-      <div class="splash-bar"></div>
+      <div class="hero-word">INNOVPHIL</div>
+      <div class="hero-tagline">INVENTORY MANAGEMENT SYSTEM</div>
+      <div class="hero-rule"></div>
+      <button class="hero-btn" onclick="handleGetStarted()">
+        GET STARTED
+        <span class="hero-btn-arrow">→</span>
+      </button>
     </div>
 
     <script>
-      // Redirect once the splash animation has finished playing (matches
-      // the .splash fade-out timing above: 2.6s hold + 0.6s fade = 3.2s).
-      const session = JSON.parse(sessionStorage.getItem('ACTIVE_SESSION')) || null;
-      const destination = session ? '/dashboard/' : '/login/';
-      setTimeout(() => {
-        window.location.href = destination;
-      }, 3200);
+      function handleGetStarted() {
+        const session = JSON.parse(sessionStorage.getItem('ACTIVE_SESSION')) || null;
+        window.location.href = session ? '/dashboard/' : '/login/';
+      }
     </script>
   </body>
 </html>
