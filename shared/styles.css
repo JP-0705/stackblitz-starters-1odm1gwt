@@ -72,7 +72,7 @@ body.standalone-auth-page {
   height: auto;
   display: block; 
 ;}
-  
+.gt-title {font-size: 30px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-weight: bold;}
 .auth-subtitle { font-size: 13px; color: #64748b; margin-bottom: 20px; }
 .auth-input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
 .auth-input:focus { border-color: #000077; box-shadow: 0 0 0 3px rgba(0, 0, 119, 0.12); }
