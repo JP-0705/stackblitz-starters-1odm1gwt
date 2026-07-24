@@ -16,10 +16,10 @@
       <div class="auth-title"><img src="https://i.ibb.co/mVgtpqGB/INNOVPHIL-LOGO-Blue.png" alt="INNOVPHIL-LOGO-Blue"></div>
       <p class="gt-title">Welcome back</h1>
       <p class="auth-subtitle">Login to continue managing your Inventory</p>
-      <input type="text" id="authEmail" class="auth-input" placeholder="Email" />
-      <input type="password" id="authPassword" class="auth-input" placeholder="Password" />
-      <button onclick="executeLoginGate()" class="auth-btn">LOGIN</button>
-      <div id="authErrorMsg" class="auth-error">Invalid access payload permissions.</div>
+      <input type="email" required id="authEmail" class="auth-input" placeholder="Email" />
+      <input type="password" required id="authPassword" class="auth-input" placeholder="Password"/>
+      <button onclick="executeLoginGate()" id="authSubmitBtn" class="auth-btn" >LOGIN</button>
+      <div id="authErrorMsg" class="auth-error">Incorrect Email or Password.</div>
       <p class="auth-signup-link">
         Don't have an account?
         <a href="/create-account/">Create one</a>

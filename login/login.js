@@ -4,6 +4,9 @@ async function executeLoginGate() {
   const userIn = emailField.value.trim().toLowerCase();
   const passIn = passwordField.value;
   const errorMsg = document.getElementById('authErrorMsg');
+  const submitBtn = document.getElementById('authSubmitBtn');
+  const originalBtnText = submitBtn.innerText;
+  
 
   emailField.classList.remove('auth-input-error');
   passwordField.classList.remove('auth-input-error');
@@ -21,6 +24,8 @@ async function executeLoginGate() {
     errorMsg.style.display = 'block';
     return;
   }
+  submitBtn.disabled = true;
+  submitBtn.innerText = 'Logging in...';
 
   const { data, error } = await supabaseClient.rpc('verify_login', {
     p_email: userIn,
@@ -31,6 +36,8 @@ async function executeLoginGate() {
     console.error('Login RPC error:', error);
     errorMsg.innerText = 'Login failed — check the console for details.';
     errorMsg.style.display = 'block';
+    submitBtn.disabled = false;
+    submitBtn.innerText = originalBtnText;
     return;
   }
 
@@ -40,8 +47,10 @@ async function executeLoginGate() {
     sessionStorage.setItem('ACTIVE_SESSION', JSON.stringify(session));
     window.location.href = '/dashboard/';
   } else {
-    errorMsg.innerText = 'Invalid access payload permissions.';
+    errorMsg.innerText = 'Incorrect Email or Password';
     errorMsg.style.display = 'block';
+    submitBtn.disabled = false;
+    submitBtn.innerText = originalBtnText;
   }
 }
 const emailField = document.getElementById('authEmail');
@@ -58,3 +67,4 @@ document.addEventListener('DOMContentLoaded', () => {
   const existing = JSON.parse(sessionStorage.getItem('ACTIVE_SESSION')) || null;
   if (existing) window.location.href = '/dashboard/';
 });
+
