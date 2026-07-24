@@ -36,9 +36,17 @@ async function executeSignup() {
     return;
   }
 
-  const { data, error } = await supabaseClient.rpc('create_account', {
-    p_email: email,
-    p_password: password,
+  // Creates the account directly in Supabase's built-in auth.users table
+  // instead of the old app_users table + create_account RPC. New accounts
+  // default to VIEWER; an admin can upgrade the role afterwards from
+  // Supabase > Authentication > Users (edit the user_metadata "role" field).
+  const { data, error } = await supabaseClient.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { role: 'VIEWER' },
+      emailRedirectTo: `${window.location.origin}/confirm/`,
+    },
   });
 
   if (error) {
@@ -48,7 +56,12 @@ async function executeSignup() {
     return;
   }
 
-  showToast('Account created! You can now log in as a viewer.', 'success');
+  if (data && data.user && !data.session) {
+    // Email confirmation is turned on for this project — no session yet.
+    showToast('Account created! Check your email to confirm it, then log in.', 'success');
+  } else {
+    showToast('Account created! You can now log in as a viewer.', 'success');
+  }
   setTimeout(() => {
     window.location.href = '/login/';
   }, 1500);

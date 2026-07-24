@@ -16,7 +16,10 @@ function requireAuth() {
   return activeUserSession;
 }
 
-function executeLogout() {
+async function executeLogout() {
+  if (supabaseClient) {
+    await supabaseClient.auth.signOut();
+  }
   sessionStorage.removeItem('ACTIVE_SESSION');
   activeUserSession = null;
   window.location.href = '/login/';
@@ -72,11 +75,21 @@ async function executeChangePassword() {
     return;
   }
 
-  const { error } = await supabaseClient.rpc('change_password', {
-    p_email: activeUserSession.email,
-    p_current_password: currentPw,
-    p_new_password: newPw,
+  // Supabase Auth's updateUser() doesn't ask for the current password
+  // itself, so re-authenticate with it first to confirm it's correct
+  // before applying the new one.
+  const { error: verifyError } = await supabaseClient.auth.signInWithPassword({
+    email: activeUserSession.email,
+    password: currentPw,
   });
+
+  if (verifyError) {
+    errorMsg.innerText = 'Current password is incorrect.';
+    errorMsg.style.display = 'block';
+    return;
+  }
+
+  const { error } = await supabaseClient.auth.updateUser({ password: newPw });
 
   if (error) {
     console.error('Change password error:', error);
