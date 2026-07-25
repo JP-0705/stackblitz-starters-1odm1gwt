@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reset Password — IMS</title>
+    <link rel="stylesheet" href="/shared/styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  </head>
+  <body class="standalone-auth-page">
+    <div class="bg-decor">
+      <div class="bg-glow"></div>
+      <div class="bg-barcode"></div>
+    </div>
+    <div class="auth-card">
+      <div class="auth-title"><img src="https://i.ibb.co/mVgtpqGB/INNOVPHIL-LOGO-Blue.png" alt="INNOVPHIL-LOGO-Blue"></div>
+
+      <div id="resetLoadingState">
+        <p class="gt-title">Verifying your link…</p>
+        <p class="auth-subtitle">Hang tight, this only takes a second.</p>
+        <div style="text-align:center; margin: 16px 0;">
+          <div class="auth-spinner"></div>
+        </div>
+      </div>
+
+      <div id="resetFormState" style="display:none;">
+        <p class="gt-title">Set a new password</p>
+        <p class="auth-subtitle">Choose a new password for your account.</p>
+        <input type="password" required minlength="6" id="newPassword" class="auth-input" placeholder="New Password" />
+        <input type="password" required id="confirmNewPassword" class="auth-input" placeholder="Confirm New Password"/>
+        <div id="resetErrorMsg" class="auth-error"></div>
+        <button onclick="executePasswordReset()" id="resetSubmitBtn" class="auth-btn">SET NEW PASSWORD</button>
+      </div>
+
+      <div id="resetProblemState" style="display:none;">
+        <p class="gt-title">Link problem</p>
+        <p class="auth-subtitle" id="resetProblemText">This link may have expired or already been used.</p>
+        <button onclick="window.location.href='/login/'" class="auth-btn">GO TO LOGIN</button>
+      </div>
+
+      <div id="resetSuccessState" style="display:none;">
+        <p class="gt-title">Password updated!</p>
+        <p class="auth-subtitle">You can now log in with your new password.</p>
+        <button onclick="window.location.href='/login/'" class="auth-btn">GO TO LOGIN</button>
+      </div>
+    </div>
+
+    <script src="/config/supabase-config.js"></script>
+    <script src="/shared/supabase-client.js"></script>
+    <script src="/reset-password/reset-password.js"></script>
+
+    <style>
+      .auth-spinner {
+        width: 28px;
+        height: 28px;
+        margin: 0 auto;
+        border: 3px solid rgba(0,0,0,0.1);
+        border-top-color: #1a1f4d;
+        border-radius: 50%;
+        animation: auth-spin 0.8s linear infinite;
+      }
+      @keyframes auth-spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
+  </body>
+</html>
