@@ -2,6 +2,25 @@
 // every category page, and analytics for header-button parity.
 let currentCountEntryRows = [];
 
+// Reused by both the blank count sheet and the filled-in count sheet print,
+// so grouping stays consistent with however the main table is currently
+// grouped (mirrors the "Group by Issued To" checkbox above the table).
+function buildCountSheetRowsHtml(rows, groupByIssuedTo, rowHtmlFn, totalColumns) {
+  let lastIssuedTo = null;
+  let html = '';
+  rows.forEach((row) => {
+    if (groupByIssuedTo) {
+      const currentIssuedTo = row.issuedTo || 'UNASSIGNED';
+      if (currentIssuedTo !== lastIssuedTo) {
+        lastIssuedTo = currentIssuedTo;
+        html += `<tr class="group-header-row"><td colspan="${totalColumns}">ISSUED TO: ${currentIssuedTo}</td></tr>`;
+      }
+    }
+    html += rowHtmlFn(row);
+  });
+  return html;
+}
+
 async function printBlankCountSheet() {
   if (!supabaseClient) {
     return alert('Not connected to the database. Check the console for details.');
@@ -14,29 +33,36 @@ async function printBlankCountSheet() {
       (currentBranchFilter === 'ALL' || item.branch === currentBranchFilter)
   );
 
+  const groupByIssuedTo = document.getElementById('groupByIssuedToCheckbox').checked;
+  if (groupByIssuedTo) {
+    scoped.sort((a, b) => (a.issuedTo || '').localeCompare(b.issuedTo || ''));
+  }
+
   const branchLabelText =
     currentBranchFilter === 'ALL' ? 'All Branches' : `${currentBranchFilter} Branch`;
   document.getElementById('countSheetMeta').innerText =
     `Branch: ${branchLabelText} — Blank Count Sheet (fill in by hand) — Printed: ${new Date().toLocaleString()}`;
 
   const tbody = document.getElementById('countSheetTableBody');
-  tbody.innerHTML = '';
-  scoped.forEach((item) => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${item.id}</td>
-      <td>${item.name}</td>
-      <td>${item.brand || '---'}</td>
-      <td>${item.category}</td>
-      <td>${item.branch || 'NAGA'}</td>
-      <td>${item.issuedTo || '---'}</td>
-      <td>${item.qty || 1}</td>
-      <td style="min-width:70px;">&nbsp;</td>
-      <td style="min-width:70px;">&nbsp;</td>
-      <td style="min-width:90px;">&nbsp;</td>
-    `;
-    tbody.appendChild(tr);
-  });
+  tbody.innerHTML = buildCountSheetRowsHtml(
+    scoped,
+    groupByIssuedTo,
+    (item) => `
+      <tr>
+        <td>${item.id}</td>
+        <td>${item.name}</td>
+        <td>${item.brand || '---'}</td>
+        <td>${item.category}</td>
+        <td>${item.branch || 'NAGA'}</td>
+        <td>${item.issuedTo || '---'}</td>
+        <td>${item.qty || 1}</td>
+        <td style="min-width:70px;">&nbsp;</td>
+        <td style="min-width:70px;">&nbsp;</td>
+        <td style="min-width:90px;">&nbsp;</td>
+      </tr>
+    `,
+    10
+  );
 
   document.body.classList.add('print-mode-count');
   window.print();
@@ -155,39 +181,48 @@ async function saveAndPrintCount() {
   // ever inserted, never updated, so it becomes this count's History entry.
   await insertCountHistoryRecord(countDate, sheetRows);
 
-  renderCountSheetPrintArea(countDate, sheetRows);
+  const groupByIssuedTo = document.getElementById('groupByIssuedToCheckbox').checked;
+  renderCountSheetPrintArea(countDate, sheetRows, groupByIssuedTo);
   closeCountEntryModal();
 
   document.body.classList.add('print-mode-count');
   window.print();
 }
 
-function renderCountSheetPrintArea(countDate, sheetRows) {
+function renderCountSheetPrintArea(countDate, sheetRows, groupByIssuedTo = false) {
   const branchLabelText =
     currentBranchFilter === 'ALL' ? 'All Branches' : `${currentBranchFilter} Branch`;
   document.getElementById('countSheetMeta').innerText =
     `Branch: ${branchLabelText} — Count Date: ${countDate} — Printed: ${new Date().toLocaleString()}`;
 
+  const rowsForPrint = groupByIssuedTo
+    ? [...sheetRows].sort((a, b) => (a.issuedTo || '').localeCompare(b.issuedTo || ''))
+    : sheetRows;
+
   const tbody = document.getElementById('countSheetTableBody');
-  tbody.innerHTML = '';
-  sheetRows.forEach((row) => {
-    const varianceClass = row.variance === 0 ? '' : 'style="color:#dc2626; font-weight:700;"';
-    const varianceText = row.variance > 0 ? `+${row.variance}` : `${row.variance}`;
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${row.id}</td>
-      <td>${row.name}</td>
-      <td>${row.brand || '---'}</td>
-      <td>${row.category}</td>
-      <td>${row.branch || 'NAGA'}</td>
-      <td>${row.issuedTo || '---'}</td>
-      <td>${row.systemQty}</td>
-      <td>${row.countedQty}</td>
-      <td ${varianceClass}>${varianceText}</td>
-      <td>${row.remarks || '---'}</td>
-    `;
-    tbody.appendChild(tr);
-  });
+  tbody.innerHTML = buildCountSheetRowsHtml(
+    rowsForPrint,
+    groupByIssuedTo,
+    (row) => {
+      const varianceClass = row.variance === 0 ? '' : 'style="color:#dc2626; font-weight:700;"';
+      const varianceText = row.variance > 0 ? `+${row.variance}` : `${row.variance}`;
+      return `
+        <tr>
+          <td>${row.id}</td>
+          <td>${row.name}</td>
+          <td>${row.brand || '---'}</td>
+          <td>${row.category}</td>
+          <td>${row.branch || 'NAGA'}</td>
+          <td>${row.issuedTo || '---'}</td>
+          <td>${row.systemQty}</td>
+          <td>${row.countedQty}</td>
+          <td ${varianceClass}>${varianceText}</td>
+          <td>${row.remarks || '---'}</td>
+        </tr>
+      `;
+    },
+    10
+  );
 }
 
 window.addEventListener('beforeprint', () => {
