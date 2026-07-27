@@ -21,9 +21,22 @@
       <button onclick="executeLoginGate()" id="authSubmitBtn" class="auth-btn" >LOGIN</button>
       <div id="authErrorMsg" class="auth-error">Incorrect Email or Password.</div>
       <p class="auth-signup-link">
+        <a href="#" onclick="toggleForgotPassword(); return false;">Forgot password?</a>
+      </p>
+      <p class="auth-signup-link">
         Don't have an account?
         <a href="/create-account/">Create one</a>
       </p>
+
+      <div id="forgotPasswordSection" style="display:none;">
+        <p class="auth-subtitle" style="margin-top:16px;">Enter your email and we'll send you a reset link.</p>
+        <input type="email" id="forgotPasswordEmail" class="auth-input" placeholder="Email" />
+        <div id="forgotPasswordMsg" class="auth-error"></div>
+        <button onclick="executeForgotPassword()" id="forgotPasswordBtn" class="auth-btn">SEND RESET LINK</button>
+        <p class="auth-signup-link">
+          <a href="#" onclick="toggleForgotPassword(); return false;">Back to login</a>
+        </p>
+      </div>
     </div>
 
     <script src="/config/supabase-config.js"></script>

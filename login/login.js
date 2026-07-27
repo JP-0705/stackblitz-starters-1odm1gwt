@@ -1,3 +1,72 @@
+function toggleForgotPassword() {
+  const loginFields = ['authEmail', 'authPassword', 'authSubmitBtn', 'authErrorMsg'];
+  const forgotSection = document.getElementById('forgotPasswordSection');
+  const isShowingForgot = forgotSection.style.display === 'block';
+
+  forgotSection.style.display = isShowingForgot ? 'none' : 'block';
+  loginFields.forEach((id) => {
+    document.getElementById(id).style.display = isShowingForgot ? '' : 'none';
+  });
+  document.querySelectorAll('.auth-signup-link').forEach((el) => {
+    if (!forgotSection.contains(el)) {
+      el.style.display = isShowingForgot ? '' : 'none';
+    }
+  });
+
+  document.getElementById('forgotPasswordMsg').style.display = 'none';
+  document.getElementById('forgotPasswordEmail').value = '';
+}
+
+async function executeForgotPassword() {
+  const emailField = document.getElementById('forgotPasswordEmail');
+  const msg = document.getElementById('forgotPasswordMsg');
+  const btn = document.getElementById('forgotPasswordBtn');
+  const email = emailField.value.trim().toLowerCase();
+
+  msg.style.background = '';
+  msg.style.borderColor = '';
+  msg.style.color = '';
+
+  if (!supabaseClient) {
+    msg.innerText = 'Not connected to the database. Check the console.';
+    msg.style.display = 'block';
+    return;
+  }
+  if (!email) {
+    msg.innerText = 'Please enter your email.';
+    msg.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerText = 'Sending...';
+
+  // redirectTo points Supabase to our own reset-password page — sending
+  // this from the app (instead of the "Send password recovery" button in
+  // the Supabase dashboard) is what lets us control where the link goes.
+  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/reset-password/`,
+  });
+
+  btn.disabled = false;
+  btn.innerText = 'SEND RESET LINK';
+
+  if (error) {
+    console.error('Password recovery request error:', error);
+    msg.innerText = error.message || 'Could not send reset link.';
+    msg.style.display = 'block';
+    return;
+  }
+
+  // Deliberately the same message whether or not the email exists — this
+  // avoids leaking which addresses have accounts on the site.
+  msg.style.background = '#dcfce7';
+  msg.style.borderColor = '#bbf7d0';
+  msg.style.color = '#166534';
+  msg.innerText = 'If an account exists for that email, a reset link is on its way.';
+  msg.style.display = 'block';
+}
+
 async function executeLoginGate() {
   const emailField = document.getElementById('authEmail');
   const passwordField = document.getElementById('authPassword');
