@@ -6,45 +6,251 @@
     <title>Login — IMS</title>
     <link rel="stylesheet" href="/shared/styles.css" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  </head>
-  <body class="standalone-auth-page">
-    <div class="bg-decor">
-      <div class="bg-glow"></div>
-      <div class="bg-barcode"></div>
-    </div>
-    <div class="auth-card">
-      <div class="auth-title"><img src="https://i.ibb.co/mVgtpqGB/INNOVPHIL-LOGO-Blue.png" alt="INNOVPHIL-LOGO-Blue"></div>
-      <p class="gt-title">Welcome back</h1>
-      <p class="auth-subtitle">Login to continue managing your Inventory</p>
-      <input type="email" required id="authEmail" class="auth-input" placeholder="Email" />
-      <input type="password" required id="authPassword" class="auth-input" placeholder="Password"/>
-      <button onclick="executeLoginGate()" id="authSubmitBtn" class="auth-btn" >LOGIN</button>
-      <div id="authErrorMsg" class="auth-error">Incorrect Email or Password.</div>
-      <p class="auth-signup-link">
-        <a href="#" onclick="toggleForgotPassword(); return false;">Forgot password?</a>
-      </p>
-      <p class="auth-signup-link">
-        Don't have an account?
-        <a href="/create-account/">Create one</a>
-      </p>
+    <style>
+      :root {
+        --panel-a: #1e3a8a;
+        --panel-b: #0f172a;
+      }
 
-      <div id="forgotPasswordSection" style="display:none;">
-        <p class="auth-subtitle" style="margin-top:16px;">Enter your email and we'll send you a reset link.</p>
-        <input type="email" id="forgotPasswordEmail" class="auth-input" placeholder="Email" />
-        <div id="forgotPasswordMsg" class="auth-error"></div>
-        <button onclick="executeForgotPassword()" id="forgotPasswordBtn" class="auth-btn">SEND RESET LINK</button>
-        <p class="auth-signup-link">
-          <a href="#" onclick="toggleForgotPassword(); return false;">Back to login</a>
-        </p>
+      body.slider-auth-page {
+        min-height: 100vh;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 22px;
+        background: #eef1f5;
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      }
+
+      .slider-logo { width: 130px; margin-top: -80px;}
+      .slider-logo img { width: 100%; display: block; }
+
+      .container {
+        position: relative;
+        width: 768px;
+        max-width: 94vw;
+        min-height: 500px;
+        background: #fff;
+        border-radius: 18px;
+        box-shadow: 0 30px 60px -20px rgba(15, 23, 42, 0.25), 0 10px 20px -10px rgba(15, 23, 42, 0.15);
+        overflow: hidden;
+      }
+
+      .form-panel {
+        position: absolute;
+        top: 0;
+        height: 100%;
+        width: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.6s ease-in-out, opacity 0.6s ease-in-out;
+      }
+
+      .form-panel form {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+        padding: 0 46px;
+      }
+
+      .form-panel h1 {
+        font-size: 24px;
+        font-weight: 700;
+        margin: 0 0 6px;
+        color: #0f172a;
+      }
+      .form-panel .hint {
+        font-size: 12.5px;
+        color: #64748b;
+        margin: 0 0 16px;
+      }
+
+      .sign-in { left: 0; z-index: 2; }
+      .sign-up { left: 0; z-index: 1; opacity: 0; }
+      .container.right-active .sign-in { transform: translateX(100%); opacity: 0; }
+      .container.right-active .sign-up { transform: translateX(100%); opacity: 1; z-index: 5; }
+
+      .overlay-wrap {
+        position: absolute;
+        top: 0; left: 50%;
+        width: 50%;
+        height: 100%;
+        overflow: hidden;
+        transition: transform 0.6s ease-in-out;
+        z-index: 10;
+      }
+      .container.right-active .overlay-wrap { transform: translateX(-100%); }
+
+      .overlay {
+        position: relative;
+        left: -100%;
+        width: 200%;
+        height: 100%;
+        background: linear-gradient(135deg, var(--panel-a), var(--panel-b));
+        color: #fff;
+        display: flex;
+        transform: translateX(0);
+        transition: transform 0.6s ease-in-out;
+      }
+      .container.right-active .overlay { transform: translateX(50%); }
+
+      .overlay-panel {
+        position: relative;
+        width: 50%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 0 40px;
+      }
+      .overlay-panel h1 { font-size: 24px; margin: 0 0 12px; font-weight: 700; }
+      .overlay-panel p { font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.85); margin: 0 0 26px; }
+      .overlay-logo { width: 60px; margin-bottom: 18px; filter: brightness(0) invert(1); opacity: 0.95; }
+
+      button.cta {
+        border-radius: 24px;
+        border: 1px solid var(--panel-a);
+        background: var(--panel-a);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        padding: 12px 24px;
+        cursor: pointer;
+        text-transform: uppercase;
+        transition: background 0.2s ease, transform 0.08s ease;
+        margin-top: 6px;
+      }
+      button.cta:hover { background: #16305f; }
+      button.cta:active { transform: scale(0.98); }
+
+      button.ghost {
+        border-radius: 24px;
+        border: 1.5px solid #fff;
+        background: transparent;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        padding: 12px 40px;
+        cursor: pointer;
+        text-transform: uppercase;
+        transition: background 0.2s ease, color 0.2s ease, transform 0.08s ease;
+      }
+      button.ghost:hover { background: #fff; color: var(--panel-a); }
+      button.ghost:active { transform: scale(0.97); }
+
+      .form-panel .auth-input { text-align: left; }
+      .forgot-link { font-size: 12.5px; color: #64748b; text-decoration: none; margin: 4px 0 14px; display: block; cursor: pointer; }
+      .switch-link { font-size: 12.5px; color: #64748b; margin-top: 16px; }
+      .switch-link a { color: var(--panel-a); font-weight: 700; text-decoration: underline; cursor: pointer; }
+
+      @media (max-width: 620px) {
+        body.slider-auth-page { padding: 20px 0; }
+        .container { min-height: 620px; }
+        .form-panel { position: relative; width: 100%; padding: 30px 0; }
+        .container:not(.right-active) .sign-up { display: none; }
+        .container.right-active .sign-in { display: none; }
+        .container.right-active .sign-up { display: flex; position: relative; transform: none; opacity: 1; }
+        .overlay-wrap { position: static; width: 100%; height: auto; transform: none !important; }
+        .overlay { position: relative; width: 100%; left: 0; flex-direction: column; transform: none !important; }
+        .overlay-panel { width: 100%; padding: 26px; }
+        .overlay-panel.overlay-right { display: none; }
+        .container.right-active .overlay-panel.overlay-left { display: none; }
+        .container.right-active .overlay-panel.overlay-right { display: flex; }
+      }
+    </style>
+  </head>
+  <body class="slider-auth-page">
+    <div class="slider-logo">
+      <img src="https://i.ibb.co/mVgtpqGB/INNOVPHIL-LOGO-Blue.png" alt="INNOVPHIL" />
+    </div>
+
+    <div class="container" id="authContainer">
+      <div class="form-panel sign-up">
+        <form id="signupForm" onsubmit="executeSignup(); return false;">
+          <h1>Create Account</h1>
+          <p class="hint">New accounts are view-only. Ask an administrator for Admin/Accounting access.</p>
+          <input type="email" required id="signupEmail" class="auth-input" placeholder="Email" />
+          <input type="password" required minlength="6" id="signupPassword" class="auth-input" placeholder="Password" />
+          <input type="password" required id="signupPasswordConfirm" class="auth-input" placeholder="Confirm Password" />
+          <div id="signupErrorMsg" class="auth-error"></div>
+          <button type="submit" class="cta">Create Account</button>
+          <p class="switch-link">Already have an account? <a onclick="switchToSignIn(); return false;">Sign In</a></p>
+        </form>
+      </div>
+
+      <div class="form-panel sign-in">
+        <form id="loginForm" onsubmit="executeLoginGate(); return false;">
+          <div id="signInFields">
+            <h1>Welcome Back</h1>
+            <p class="hint">Sign in to continue managing your inventory</p>
+            <input type="email" required id="authEmail" class="auth-input" placeholder="Email" />
+            <input type="password" required id="authPassword" class="auth-input" placeholder="Password" />
+            <div id="authErrorMsg" class="auth-error"></div>
+            <a class="forgot-link" onclick="toggleForgotPassword(); return false;">Forgot your password?</a>
+            <button type="submit" id="authSubmitBtn" class="cta">Sign In</button>
+            <p class="switch-link">Don't have an account? <a onclick="switchToSignUp(); return false;">Sign Up</a></p>
+          </div>
+
+          <div id="forgotPasswordSection" style="display:none;">
+            <h1>Reset Password</h1>
+            <p class="hint">Enter your email and we'll send you a reset link.</p>
+            <input type="email" id="forgotPasswordEmail" class="auth-input" placeholder="Email" />
+            <div id="forgotPasswordMsg" class="auth-error"></div>
+            <button type="button" onclick="executeForgotPassword()" id="forgotPasswordBtn" class="cta">Send Reset Link</button>
+            <p class="switch-link"><a onclick="toggleForgotPassword(); return false;">Back to Sign In</a></p>
+          </div>
+        </form>
+      </div>
+
+      <div class="overlay-wrap">
+        <div class="overlay">
+          <div class="overlay-panel overlay-left">
+            <img class="overlay-logo" src="https://i.ibb.co/mVgtpqGB/INNOVPHIL-LOGO-Blue.png" alt="" />
+            <h1>Welcome Back!</h1>
+            <p>Sign in to keep tracking and managing the inventory.</p>
+            <button type="button" class="ghost" id="toSignIn">Sign In</button>
+          </div>
+          <div class="overlay-panel overlay-right">
+            <img class="overlay-logo" src="https://i.ibb.co/mVgtpqGB/INNOVPHIL-LOGO-Blue.png" alt="" />
+            <h1>Hello, Friend!</h1>
+            <p>Create a viewer account to get started.</p>
+            <button type="button" class="ghost" id="toSignUp">Sign Up</button>
+          </div>
+        </div>
       </div>
     </div>
 
     <script src="/config/supabase-config.js"></script>
     <script src="/shared/supabase-client.js"></script>
+    <script src="/shared/ui.js"></script>
     <script src="/login/login.js"></script>
+    <script src="/create-account/signup.js"></script>
 
-    <style>
-      
-    </style>
+    <script>
+      const authContainer = document.getElementById('authContainer');
+
+      function switchToSignUp() {
+        authContainer.classList.add('right-active');
+      }
+      function switchToSignIn() {
+        authContainer.classList.remove('right-active');
+      }
+
+      document.getElementById('toSignUp').addEventListener('click', switchToSignUp);
+      document.getElementById('toSignIn').addEventListener('click', switchToSignIn);
+
+      if (new URLSearchParams(window.location.search).get('mode') === 'signup') {
+        switchToSignUp();
+      }
+    </script>
   </body>
 </html>

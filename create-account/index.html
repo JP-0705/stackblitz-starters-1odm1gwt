@@ -2,59 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Create Account — IMS</title>
-    <link rel="stylesheet" href="/shared/styles.css" />
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <meta http-equiv="refresh" content="0; url=/login/?mode=signup" />
+    <title>Redirecting…</title>
+    <script>window.location.replace('/login/?mode=signup');</script>
   </head>
-  <body class="standalone-auth-page">
-    <div class="bg-decor">
-      <div class="bg-glow"></div>
-      <div class="bg-barcode"></div>
-    </div>
-    <div class="auth-card">
-      <div class="auth-title">
-        <img
-          src="https://i.ibb.co/mVgtpqGB/INNOVPHIL-LOGO-Blue.png"
-          alt="INNOVPHIL-LOGO-Blue"
-        />
-      </div>
-      <h3 style="margin-bottom: 6px">Create a Viewer Account</h3>
-      <p style="font-size: 12px; color: #64748b; margin-bottom: 16px">
-        New accounts are view-only. For Accounting or Admin access, ask
-        your administrator to create your account directly.
-      </p>
-      <input
-        type="email"
-        id="signupEmail"
-        class="auth-input"
-        placeholder="Email"
-      />
-      <input
-        type="password"
-        id="signupPassword"
-        class="auth-input"
-        placeholder="Password"
-      />
-      <input
-        type="password"
-        id="signupPasswordConfirm"
-        class="auth-input"
-        placeholder="Confirm Password"
-      />
-      <div id="signupErrorMsg" class="auth-error"></div>
-      <button onclick="executeSignup()" class="auth-btn">Create Account</button>
-      <p class="auth-signup-link">
-        Already have an account?
-        <a href="/login/">Log in</a>
-      </p>
-    </div>
-
-    <div id="toastContainer" class="toast-container no-print"></div>
-
-    <script src="/config/supabase-config.js"></script>
-    <script src="/shared/supabase-client.js"></script>
-    <script src="/shared/ui.js"></script>
-    <script src="/create-account/signup.js"></script>
+  <body>
+    <p>Redirecting to <a href="/login/?mode=signup">sign up</a>…</p>
   </body>
 </html>

@@ -73,9 +73,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('signupPasswordConfirm'),
   ];
   fields.forEach((field) => {
-    field.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') executeSignup();
-    });
     field.addEventListener('input', () => field.classList.remove('auth-input-error'));
   });
 });

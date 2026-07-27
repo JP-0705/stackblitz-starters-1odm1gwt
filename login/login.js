@@ -1,17 +1,10 @@
 function toggleForgotPassword() {
-  const loginFields = ['authEmail', 'authPassword', 'authSubmitBtn', 'authErrorMsg'];
+  const signInFields = document.getElementById('signInFields');
   const forgotSection = document.getElementById('forgotPasswordSection');
   const isShowingForgot = forgotSection.style.display === 'block';
 
   forgotSection.style.display = isShowingForgot ? 'none' : 'block';
-  loginFields.forEach((id) => {
-    document.getElementById(id).style.display = isShowingForgot ? '' : 'none';
-  });
-  document.querySelectorAll('.auth-signup-link').forEach((el) => {
-    if (!forgotSection.contains(el)) {
-      el.style.display = isShowingForgot ? '' : 'none';
-    }
-  });
+  signInFields.style.display = isShowingForgot ? 'block' : 'none';
 
   document.getElementById('forgotPasswordMsg').style.display = 'none';
   document.getElementById('forgotPasswordEmail').value = '';
@@ -133,9 +126,6 @@ async function executeLoginGate() {
 const emailField = document.getElementById('authEmail');
 const passwordField = document.getElementById('authPassword');
 [emailField, passwordField].forEach((field) => {
-  field.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') executeLoginGate();
-  });
   field.addEventListener('input', () => field.classList.remove('auth-input-error'));
 });
 
