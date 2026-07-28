@@ -271,6 +271,16 @@
       </div>
     </main>
 
+    <div id="rowDetailModal" class="modal-backdrop no-print" onclick="if(event.target===this) closeRowDetailModal()">
+      <div class="modal-box" style="max-width: 320px; padding: 22px 24px;">
+        <h3 style="font-size: 16px; margin-bottom: 10px;">📋 Product Details</h3>
+        <div id="rowDetailBody" style="line-height: 1.5; font-size: 12.5px; color:#1e293b;"></div>
+        <div class="modal-actions">
+          <button onclick="closeRowDetailModal()" class="action-btn" style="background: #e2e8f0; color: #334155">Close</button>
+          <button id="rowDetailEditBtn" onclick="handleRowDetailEditClick()" class="action-btn btn-dark">Edit</button>
+        </div>
+      </div>
+    </div>
     <div id="assetDataModal" class="modal-backdrop no-print">
       <div class="modal-box">
         <h3 id="modalBoxTitle">Add Operational Asset Record</h3>

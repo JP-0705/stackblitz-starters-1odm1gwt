@@ -265,16 +265,45 @@ body.sidebar-collapsed .sidebar-toggle-btn { left: 0; }
 
 .data-container { 
   flex: 1; 
-  overflow-y: auto;
+  overflow-y: hidden;
   padding: 24px; 
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
-.table-scroll-wrapper {
-  width: 100%;
+.table-scroll-top {
   overflow-x: auto;
+  overflow-y: hidden;
+  height: 16px;
+  margin-bottom: 6px;
+  flex-shrink: 0;
+  border-radius: 4px;
+}
+.table-scroll-top-inner { height: 1px; }
+/* Outer box is what actually shows the border/shadow and clips content —
+   .table-scroll-wrapper inside it is made slightly taller than 100%, so
+   its own native horizontal scrollbar renders just past the bottom edge
+   and gets clipped away entirely. This hides it in every browser (not
+   just Chrome), since it doesn't rely on any non-standard CSS property —
+   the table is still fully scrollable via the synced bar above, trackpad,
+   or shift+wheel. */
+.table-scroll-outer {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
   box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
   border-radius: 12px;
   border: 1px solid #e2e8f0;
 }
+.table-scroll-wrapper {
+  width: 100%;
+  height: calc(100% + 20px);
+  overflow: auto;
+}
+.table-scroll-wrapper::-webkit-scrollbar:vertical { width: 10px; }
+.table-scroll-wrapper::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
+.table-scroll-wrapper::-webkit-scrollbar-track { background: transparent; }
 .table-card { background: #fff; min-width: 3250px; }
 table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; table-layout: fixed; }
 
@@ -378,9 +407,14 @@ tr:hover td { background: #f8fafc; }
     overflow: visible;
   }
 
-  .table-scroll-wrapper {
+  .table-scroll-outer {
+    overflow: visible;
     border: none;
     box-shadow: none;
+  }
+
+  .table-scroll-wrapper {
+    height: auto;
     overflow: visible;
   }
 

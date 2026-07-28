@@ -104,6 +104,7 @@ function renderTableRows(dataRows, groupByIssuedTo = false) {
   if (!tbody) return;
   tbody.innerHTML = '';
   let lastIssuedTo = null;
+  window.lastRenderedAssetRows = dataRows;
 
   const TOTAL_TABLE_COLUMNS = 24;
 
@@ -129,22 +130,22 @@ function renderTableRows(dataRows, groupByIssuedTo = false) {
       <td style="text-align:center; white-space:nowrap;">
         ${
           isAdmin
-            ? `<button onclick="openAssetEditModal('${item.id}')" class="btn-table btn-edit-rem">✏️ Edit</button>`
+            ? `<button onclick="event.stopPropagation(); openAssetEditModal('${item.id}')" class="btn-table btn-edit-rem">✏️ Edit</button>`
             : ''
         }
         ${
           canComment
-            ? `<button onclick="openRemarksEditModal('${item.id}')" class="btn-table btn-edit-rem">💬 Remarks</button>`
+            ? `<button onclick="event.stopPropagation(); openRemarksEditModal('${item.id}')" class="btn-table btn-edit-rem">💬 Remarks</button>`
             : ''
         }
         ${
           isAdmin
-            ? `<button onclick="openAssetEditHistoryModal('${item.id}')" class="btn-table btn-edit-rem">🕘 History</button>`
+            ? `<button onclick="event.stopPropagation(); openAssetEditHistoryModal('${item.id}')" class="btn-table btn-edit-rem">🕘 History</button>`
             : ''
         }
         ${
           isAdmin
-            ? `<button onclick="deleteAssetRecord('${item.id}')" class="btn-table" style="background:#fee2e2; color:#b91c1c;">🗑️ Del</button>`
+            ? `<button onclick="event.stopPropagation(); deleteAssetRecord('${item.id}')" class="btn-table" style="background:#fee2e2; color:#b91c1c;">🗑️ Del</button>`
             : ''
         }
       </td>
@@ -176,7 +177,7 @@ function renderTableRows(dataRows, groupByIssuedTo = false) {
     const noteClass = noteClassMap[item.note] || 'note-active';
 
     const imageCell = item.imageUrl
-      ? `<img src="${item.imageUrl}" alt="${item.name || 'asset'}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; cursor:pointer;" onclick="showAssetImagePreview('${item.imageUrl}', '${(item.name || 'Asset').replace(/'/g, "\\'")}')" />`
+      ? `<img src="${item.imageUrl}" alt="${item.name || 'asset'}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; cursor:pointer;" onclick="event.stopPropagation(); showAssetImagePreview('${item.imageUrl}', '${(item.name || 'Asset').replace(/'/g, "\\'")}')" />`
       : '<span style="color:#94a3b8; font-size:11px;">No Image</span>';
 
     const remainingLife = calculateRemainingUsefulLife(item.purchaseDate, item.usefulLife);
@@ -209,6 +210,8 @@ function renderTableRows(dataRows, groupByIssuedTo = false) {
       <td style="font-style:italic; color:#475569;">${item.remarks || '---'}</td>
       ${actionButtons}
     `;
+    row.style.cursor = 'pointer';
+    row.addEventListener('click', () => openRowDetailModal(item.id));
     tbody.appendChild(row);
   });
 
@@ -220,7 +223,107 @@ function renderTableRows(dataRows, groupByIssuedTo = false) {
   }
 }
 
+// Row-click "Product Details" popup — shows a clean summary of one row
+// without needing to scroll the wide table sideways. Populated from
+// whatever is currently in the table (no extra fetch needed).
+let currentRowDetailAssetId = null;
+
+function openRowDetailModal(assetId) {
+  const item = window.lastRenderedAssetRows
+    ? window.lastRenderedAssetRows.find((row) => row.id === assetId)
+    : null;
+  if (!item) return;
+
+  currentRowDetailAssetId = assetId;
+
+  const body = document.getElementById('rowDetailBody');
+  body.innerHTML = `
+    <p style="margin:5px 0;"><strong>Date:</strong> ${item.purchaseDate || '---'}</p>
+    <p style="margin:5px 0;"><strong>Asset Name:</strong> ${item.name || '---'}</p>
+    <p style="margin:5px 0;"><strong>Description:</strong> ${item.description || '---'}</p>
+    <p style="margin:5px 0;"><strong>Serial:</strong> ${item.serialNumber || '---'}</p>
+    <p style="margin:5px 0;"><strong>Category:</strong> ${item.category || '---'}</p>
+    <p style="margin:5px 0;"><strong>Branch:</strong> ${item.branch || 'NAGA'}</p>
+    <p style="margin:5px 0;"><strong>Issued To:</strong> ${item.issuedTo || '---'}</p>
+    <p style="margin:5px 0;"><strong>Status:</strong> ${item.status || '---'}</p>
+    <p style="margin:5px 0;"><strong>Quantity:</strong> ${item.qty || 1}</p>
+    <p style="margin:5px 0;"><strong>Price:</strong> ₱ ${Number(item.unitPrice || 0).toLocaleString()}</p>
+    <p style="margin:5px 0;"><strong>Useful Life:</strong> ${item.usefulLife || '---'} (${calculateRemainingUsefulLife(item.purchaseDate, item.usefulLife)} remaining)</p>
+  `;
+
+  const isAdmin = activeUserSession && activeUserSession.role === 'ADMIN';
+  document.getElementById('rowDetailEditBtn').style.display = isAdmin ? 'inline-block' : 'none';
+
+  document.getElementById('rowDetailModal').style.display = 'flex';
+}
+
+function closeRowDetailModal() {
+  document.getElementById('rowDetailModal').style.display = 'none';
+  currentRowDetailAssetId = null;
+}
+
+function handleRowDetailEditClick() {
+  const assetId = currentRowDetailAssetId;
+  closeRowDetailModal();
+  if (assetId) openAssetEditModal(assetId);
+}
+
+// A second, synced horizontal scrollbar placed above the table — so
+// scrolling left/right doesn't require reaching all the way down to the
+// bottom of a tall table to find the real one.
+function initTableScrollSync() {
+  let wrapper = document.querySelector('.data-container .table-scroll-wrapper');
+  if (!wrapper) return; // pages without this table (e.g. analytics)
+
+  // Wrap the real scrolling element in a clipping box so its native
+  // horizontal scrollbar renders just past the visible bottom edge and
+  // is hidden in every browser (not just Chrome) — see styles.css.
+  let outer = wrapper.parentElement;
+  if (!outer.classList.contains('table-scroll-outer')) {
+    outer = document.createElement('div');
+    outer.className = 'table-scroll-outer';
+    wrapper.parentNode.insertBefore(outer, wrapper);
+    outer.appendChild(wrapper);
+  }
+
+  let topBar = document.getElementById('tableScrollTop');
+  let inner;
+  if (!topBar) {
+    topBar = document.createElement('div');
+    topBar.id = 'tableScrollTop';
+    topBar.className = 'table-scroll-top no-print';
+    inner = document.createElement('div');
+    inner.className = 'table-scroll-top-inner';
+    topBar.appendChild(inner);
+    outer.parentNode.insertBefore(topBar, outer);
+  } else {
+    inner = topBar.querySelector('.table-scroll-top-inner');
+  }
+
+  function syncWidth() {
+    const table = wrapper.querySelector('table');
+    if (table) inner.style.width = table.scrollWidth + 'px';
+  }
+  syncWidth();
+  window.addEventListener('resize', syncWidth);
+
+  let syncing = false;
+  topBar.addEventListener('scroll', () => {
+    if (syncing) return;
+    syncing = true;
+    wrapper.scrollLeft = topBar.scrollLeft;
+    syncing = false;
+  });
+  wrapper.addEventListener('scroll', () => {
+    if (syncing) return;
+    syncing = true;
+    topBar.scrollLeft = wrapper.scrollLeft;
+    syncing = false;
+  });
+}
+
 // Called once on DOMContentLoaded by each dashboard/category page.
 function initTablePage() {
   searchAssets();
+  initTableScrollSync();
 }
