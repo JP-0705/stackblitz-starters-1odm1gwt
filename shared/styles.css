@@ -306,7 +306,7 @@ body.sidebar-collapsed .sidebar-toggle-btn { left: 0; }
 .table-scroll-wrapper::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
 .table-scroll-wrapper::-webkit-scrollbar-track { background: transparent; }
 .table-card { background: #fff; min-width: 3250px; }
-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; table-layout: fixed; }
+table { width: 100%; border-collapse: separate; border-spacing: 0; text-align: left; font-size: 13px; table-layout: fixed; }
 
 thead { position: sticky; top: 0; z-index: 20; color: #fff; }
 th, td { padding: 12px 14px; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #f1f5f9; overflow-wrap: break-word; word-break: break-word; }

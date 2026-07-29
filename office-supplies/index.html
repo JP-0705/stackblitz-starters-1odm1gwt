@@ -190,6 +190,9 @@
           <option value="DEFECTIVE">DEFECTIVE</option>
           <option value="DISPOSED">DISPOSED</option>
         </select>
+        <select id="assetTypeFilterSelect" class="condition-filter-select" onchange="searchAssets()">
+          <option value="ALL">ALL TYPES</option>
+        </select>
         <label class="group-toggle-label">
           <input type="checkbox" id="groupByIssuedToCheckbox" onchange="searchAssets()" />
           Group by Issued To
@@ -236,7 +239,7 @@
                   <th colspan="3" class="cat-light-blue">DESIGNATION</th>
                   <th colspan="7" class="cat-orange">PURCHASE HISTORY</th>
                   <th colspan="5" class="cat-red">CUSTODIAN'S NOTE</th>
-                  <th rowspan="2" style="text-align: center; vertical-align: middle; color:rgb(53, 53, 53)">ACTIONS</th>
+                  <th rowspan="2" style="text-align: center; vertical-align: middle; color:rgb(53, 53, 53); background: #f1f5f9;">ACTIONS</th>
                 </tr>
                 <tr class="header-main-row">
                   <th>INNOV-ID</th>

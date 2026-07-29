@@ -66,21 +66,51 @@ function handleBranchFilterChange() {
   searchAssets();
 }
 
+// Rebuilds the Asset Type dropdown from whatever distinct itemCategory
+// values actually exist right now (scoped to this page's category/branch)
+// — so a brand new type typed into the Add Asset form shows up here on
+// its own next time the table loads, with nothing to configure by hand.
+function populateAssetTypeFilterOptions(scopedItems) {
+  const select = document.getElementById('assetTypeFilterSelect');
+  if (!select) return;
+
+  const currentValue = select.value;
+  const distinctTypes = [...new Set(
+    scopedItems.map((item) => (item.itemCategory || '').trim()).filter(Boolean)
+  )].sort();
+
+  select.innerHTML =
+    '<option value="ALL">ALL TYPES</option>' +
+    distinctTypes.map((type) => `<option value="${type}">${type}</option>`).join('');
+
+  select.value = distinctTypes.includes(currentValue) ? currentValue : 'ALL';
+}
+
 async function searchAssets() {
   const tbody = document.getElementById('tableBody');
   if (!tbody) return; // guard: this page has no table (e.g. analytics)
 
   const searchInput = document.getElementById('globalSearch').value.toLowerCase();
   const conditionFilter = document.getElementById('conditionFilterSelect').value;
+  const assetTypeSelect = document.getElementById('assetTypeFilterSelect');
+  const assetTypeFilter = assetTypeSelect ? assetTypeSelect.value : 'ALL';
   const groupByIssuedTo = document.getElementById('groupByIssuedToCheckbox').checked;
   const rawDatabase = await fetchBackendDataRows();
-  const filtered = rawDatabase.filter((item) => {
+
+  const categoryBranchScoped = rawDatabase.filter((item) => {
     const matchesCategory =
       currentCategoryFilter === 'ALL' || item.category === currentCategoryFilter;
     const matchesBranch =
       currentBranchFilter === 'ALL' || item.branch === currentBranchFilter;
+    return matchesCategory && matchesBranch;
+  });
+  populateAssetTypeFilterOptions(categoryBranchScoped);
+
+  const filtered = categoryBranchScoped.filter((item) => {
     const matchesCondition =
       conditionFilter === 'ALL' || item.condition === conditionFilter;
+    const matchesAssetType =
+      assetTypeFilter === 'ALL' || item.itemCategory === assetTypeFilter;
     const matchesKeyword =
       (item.id || '').toLowerCase().includes(searchInput) ||
       (item.name || '').toLowerCase().includes(searchInput) ||
@@ -89,7 +119,7 @@ async function searchAssets() {
       (item.model || '').toLowerCase().includes(searchInput) ||
       (item.itemCategory || '').toLowerCase().includes(searchInput) ||
       (item.serialNumber || '').toLowerCase().includes(searchInput);
-    return matchesCategory && matchesBranch && matchesCondition && matchesKeyword;
+    return matchesCondition && matchesAssetType && matchesKeyword;
   });
 
   if (groupByIssuedTo) {

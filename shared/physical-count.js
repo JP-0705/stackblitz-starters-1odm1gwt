@@ -89,38 +89,45 @@ async function openPhysicalCountModal() {
       (currentBranchFilter === 'ALL' || item.branch === currentBranchFilter)
   );
 
+  const groupByIssuedTo = document.getElementById('groupByIssuedToCheckbox').checked;
+  if (groupByIssuedTo) {
+    currentCountEntryRows.sort((a, b) => (a.issuedTo || '').localeCompare(b.issuedTo || ''));
+  }
+
   const tbody = document.getElementById('countEntryTableBody');
-  tbody.innerHTML = '';
-  currentCountEntryRows.forEach((item) => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td style="font-family:monospace;">${item.id}</td>
-      <td>${item.name}</td>
-      <td>${item.branch || 'NAGA'}</td>
-      <td>${item.qty || 1}</td>
-      <td>
-        <input
-          type="number"
-          min="0"
-          data-asset-id="${item.id}"
-          data-system-qty="${item.qty || 1}"
-          class="countedQtyInput"
-          value="${item.qty || 1}"
-          oninput="updateCountVarianceDisplay('${item.id}')"
-        />
-      </td>
-      <td id="variance-${item.id}" class="variance-zero">0</td>
-      <td>
-        <input
-          type="text"
-          data-asset-id="${item.id}"
-          class="countRemarksInput"
-          placeholder="Optional note..."
-        />
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
+  tbody.innerHTML = buildCountSheetRowsHtml(
+    currentCountEntryRows,
+    groupByIssuedTo,
+    (item) => `
+      <tr>
+        <td style="font-family:monospace;">${item.id}</td>
+        <td>${item.name}</td>
+        <td>${item.branch || 'NAGA'}</td>
+        <td>${item.qty || 1}</td>
+        <td>
+          <input
+            type="number"
+            min="0"
+            data-asset-id="${item.id}"
+            data-system-qty="${item.qty || 1}"
+            class="countedQtyInput"
+            value="${item.qty || 1}"
+            oninput="updateCountVarianceDisplay('${item.id}')"
+          />
+        </td>
+        <td id="variance-${item.id}" class="variance-zero">0</td>
+        <td>
+          <input
+            type="text"
+            data-asset-id="${item.id}"
+            class="countRemarksInput"
+            placeholder="Optional note..."
+          />
+        </td>
+      </tr>
+    `,
+    7
+  );
 
   document.getElementById('countEntryModal').style.display = 'flex';
 }
@@ -176,12 +183,16 @@ async function saveAndPrintCount() {
     return alert('Failed to save physical count:\n\n' + error.message);
   }
 
+  const groupByIssuedTo = document.getElementById('groupByIssuedToCheckbox').checked;
+  if (groupByIssuedTo) {
+    sheetRows.sort((a, b) => (a.issuedTo || '').localeCompare(b.issuedTo || ''));
+  }
+
   // The live "asset_counts" row above can still be re-saved for the same
   // date, but this snapshot is a permanent, locked record — it is only
   // ever inserted, never updated, so it becomes this count's History entry.
   await insertCountHistoryRecord(countDate, sheetRows);
 
-  const groupByIssuedTo = document.getElementById('groupByIssuedToCheckbox').checked;
   renderCountSheetPrintArea(countDate, sheetRows, groupByIssuedTo);
   closeCountEntryModal();
 
