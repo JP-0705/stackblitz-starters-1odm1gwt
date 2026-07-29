@@ -352,8 +352,35 @@ function initTableScrollSync() {
   });
 }
 
-// Called once on DOMContentLoaded by each dashboard/category page.
-function initTablePage() {
-  searchAssets();
+// Called once on DOMContentLoaded by each dashboard/category page. Also
+// picks up ?branch=, ?condition=, and ?assetType= from the URL — these
+// are set when someone clicks a bar/slice on the Analytics charts, so
+// landing here immediately shows the filtered list they clicked for.
+async function initTablePage() {
+  const params = new URLSearchParams(window.location.search);
+  const branchParam = params.get('branch');
+  const conditionParam = params.get('condition');
+  const assetTypeParam = params.get('assetType');
+
+  function applyParamToSelect(selectId, paramValue) {
+    if (!paramValue) return false;
+    const select = document.getElementById(selectId);
+    if (!select) return false;
+    const matched = [...select.options].some((opt) => opt.value === paramValue);
+    if (matched) select.value = paramValue;
+    return matched;
+  }
+
+  applyParamToSelect('branchFilterSelect', branchParam);
+  applyParamToSelect('conditionFilterSelect', conditionParam);
+
+  await searchAssets(); // also populates the Asset Type dropdown's options
+
+  // Asset Type can only be selected after searchAssets() has populated
+  // its <option> list above, so it needs a second pass.
+  if (applyParamToSelect('assetTypeFilterSelect', assetTypeParam)) {
+    await searchAssets();
+  }
+
   initTableScrollSync();
 }

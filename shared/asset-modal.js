@@ -274,10 +274,10 @@ async function commitAccountingRemarksChange() {
   const targetId = document.getElementById('modalRemarksTargetId').value;
   const newRemarks = document.getElementById('formRemarksFieldText').value.toUpperCase();
 
-  const { error } = await supabaseClient
-    .from('assets')
-    .update({ remarks: newRemarks })
-    .eq('id', targetId);
+  const { error } = await supabaseClient.rpc('update_asset_remarks', {
+    p_asset_id: targetId,
+    p_remarks: newRemarks,
+  });
 
   if (error) {
     console.error('Supabase remarks update error:', error);
