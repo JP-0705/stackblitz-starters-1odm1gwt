@@ -7,7 +7,19 @@ function toggleForgotPassword() {
   signInFields.style.display = isShowingForgot ? 'block' : 'none';
 
   document.getElementById('forgotPasswordMsg').style.display = 'none';
-  document.getElementById('forgotPasswordEmail').value = '';
+
+  const emailField = document.getElementById('forgotPasswordEmail');
+  // If someone is already logged in on this browser, lock the field to
+  // their own email — no reason to let a signed-in person type in
+  // someone else's address and send them an unsolicited reset link.
+  const existingSession = JSON.parse(sessionStorage.getItem('ACTIVE_SESSION') || 'null');
+  if (existingSession && existingSession.email) {
+    emailField.value = existingSession.email;
+    emailField.readOnly = true;
+  } else {
+    emailField.value = '';
+    emailField.readOnly = false;
+  }
 }
 
 async function executeForgotPassword() {
@@ -112,7 +124,7 @@ async function executeLoginGate() {
   if (data && data.user) {
     // Role now lives in the auth user's metadata (set at signup / by an
     // admin in Supabase Authentication > Users), not in a separate table.
-    const assignedRole = (data.user.user_metadata && data.user.user_metadata.role) || 'VIEWER';
+    const assignedRole = (data.user.app_metadata && data.user.app_metadata.role) || 'VIEWER';
     const session = { email: data.user.email, role: assignedRole };
     sessionStorage.setItem('ACTIVE_SESSION', JSON.stringify(session));
     window.location.href = '/dashboard/';
@@ -142,7 +154,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const { data } = await supabaseClient.auth.getSession();
     if (data && data.session && data.session.user) {
       const assignedRole =
-        (data.session.user.user_metadata && data.session.user.user_metadata.role) || 'VIEWER';
+        (data.session.user.app_metadata && data.session.user.app_metadata.role) || 'VIEWER';
       sessionStorage.setItem(
         'ACTIVE_SESSION',
         JSON.stringify({ email: data.session.user.email, role: assignedRole })
