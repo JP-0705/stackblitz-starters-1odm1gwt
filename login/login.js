@@ -9,6 +9,7 @@ function toggleForgotPassword() {
   document.getElementById('forgotPasswordMsg').style.display = 'none';
 
   const emailField = document.getElementById('forgotPasswordEmail');
+  const confirmField = document.getElementById('forgotPasswordEmailConfirm');
   // If someone is already logged in on this browser, lock the field to
   // their own email — no reason to let a signed-in person type in
   // someone else's address and send them an unsolicited reset link.
@@ -16,17 +17,23 @@ function toggleForgotPassword() {
   if (existingSession && existingSession.email) {
     emailField.value = existingSession.email;
     emailField.readOnly = true;
+    confirmField.value = existingSession.email;
+    confirmField.readOnly = true;
   } else {
     emailField.value = '';
     emailField.readOnly = false;
+    confirmField.value = '';
+    confirmField.readOnly = false;
   }
 }
 
 async function executeForgotPassword() {
   const emailField = document.getElementById('forgotPasswordEmail');
+  const confirmField = document.getElementById('forgotPasswordEmailConfirm');
   const msg = document.getElementById('forgotPasswordMsg');
   const btn = document.getElementById('forgotPasswordBtn');
   const email = emailField.value.trim().toLowerCase();
+  const confirmEmail = confirmField.value.trim().toLowerCase();
 
   msg.style.background = '';
   msg.style.borderColor = '';
@@ -37,8 +44,15 @@ async function executeForgotPassword() {
     msg.style.display = 'block';
     return;
   }
-  if (!email) {
-    msg.innerText = 'Please enter your email.';
+  if (!email || !confirmEmail) {
+    msg.innerText = 'Please enter your email in both fields.';
+    msg.style.display = 'block';
+    return;
+  }
+  // Catches typos before sending — without ever confirming whether the
+  // address actually has an account (that check stays server-side only).
+  if (email !== confirmEmail) {
+    msg.innerText = 'Those two emails don\'t match. Please double-check and try again.';
     msg.style.display = 'block';
     return;
   }
