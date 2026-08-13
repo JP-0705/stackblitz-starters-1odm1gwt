@@ -51,7 +51,11 @@ async function fetchCountHistoryRows() {
 }
 
 async function openCountHistoryModal() {
-  if (!activeUserSession || activeUserSession.role !== 'ADMIN') return;
+  if (
+    !activeUserSession ||
+    (activeUserSession.role !== 'ADMIN' && activeUserSession.role !== 'ACCOUNTING')
+  )
+    return;
   await renderCountHistoryList();
   document.getElementById('countHistoryModal').style.display = 'flex';
 }

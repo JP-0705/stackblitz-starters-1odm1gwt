@@ -97,6 +97,12 @@ function openAssetInsertModal() {
 }
 
 async function openAssetEditModal(assetId) {
+  if (
+    !activeUserSession ||
+    (activeUserSession.role !== 'ADMIN' && activeUserSession.role !== 'ACCOUNTING')
+  ) {
+    return;
+  }
   const db = await fetchBackendDataRows();
   const item = db.find((i) => i.id === assetId);
   if (!item) return;
@@ -254,6 +260,12 @@ async function commitAssetStorageChange() {
 let originalRemarksValue = '';
 
 async function openRemarksEditModal(assetId) {
+  if (
+    !activeUserSession ||
+    (activeUserSession.role !== 'ADMIN' && activeUserSession.role !== 'ACCOUNTING')
+  ) {
+    return;
+  }
   const db = await fetchBackendDataRows();
   const item = db.find((i) => i.id === assetId);
   if (!item) return;

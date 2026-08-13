@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Confirmed — the user already has a valid session at this point, so
   // log them straight in, same as login.js does.
   const assignedRole =
-    (data.session.user.user_metadata && data.session.user.user_metadata.role) || 'VIEWER';
+    (data.session.user.app_metadata && data.session.user.app_metadata.role) || 'VIEWER';
   sessionStorage.setItem(
     'ACTIVE_SESSION',
     JSON.stringify({ email: data.session.user.email, role: assignedRole })

@@ -36,10 +36,11 @@ async function executeSignup() {
     return;
   }
 
-  // Creates the account directly in Supabase's built-in auth.users table
-  // instead of the old app_users table + create_account RPC. New accounts
-  // default to VIEWER; an admin can upgrade the role afterwards from
-  // Supabase > Authentication > Users (edit the user_metadata "role" field).
+  // Creates the account directly in Supabase's built-in auth.users table.
+  // The role that actually matters is set server-side by a database
+  // trigger (into the secure app_metadata field, defaulting to VIEWER) —
+  // the options.data below is harmless leftover, not what's trusted.
+  // An admin can upgrade the role afterwards via SQL (see project notes).
   const { data, error } = await supabaseClient.auth.signUp({
     email,
     password,

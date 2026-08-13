@@ -22,6 +22,12 @@ function buildCountSheetRowsHtml(rows, groupByIssuedTo, rowHtmlFn, totalColumns)
 }
 
 async function printBlankCountSheet() {
+  if (
+    !activeUserSession ||
+    (activeUserSession.role !== 'ADMIN' && activeUserSession.role !== 'ACCOUNTING')
+  ) {
+    return;
+  }
   if (!supabaseClient) {
     return alert('Not connected to the database. Check the console for details.');
   }
@@ -69,6 +75,12 @@ async function printBlankCountSheet() {
 }
 
 async function openPhysicalCountModal() {
+  if (
+    !activeUserSession ||
+    (activeUserSession.role !== 'ADMIN' && activeUserSession.role !== 'ACCOUNTING')
+  ) {
+    return;
+  }
   if (!supabaseClient) {
     return alert('Not connected to the database. Check the console for details.');
   }

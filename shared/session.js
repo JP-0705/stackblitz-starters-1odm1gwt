@@ -32,16 +32,17 @@ function applyRoleVisibility() {
   if (roleLabel) roleLabel.innerText = activeUserSession.role;
 
   const isAdmin = activeUserSession.role === 'ADMIN';
+  const canManageAssets = isAdmin || activeUserSession.role === 'ACCOUNTING';
   const addBtn = document.getElementById('addNewAssetMasterBtn');
-  if (addBtn) addBtn.style.display = isAdmin ? 'block' : 'none';
+  if (addBtn) addBtn.style.display = canManageAssets ? 'block' : 'none';
   const blankBtn = document.getElementById('blankCountSheetBtn');
-  if (blankBtn) blankBtn.style.display = isAdmin ? 'block' : 'none';
+  if (blankBtn) blankBtn.style.display = canManageAssets ? 'block' : 'none';
   const countBtn = document.getElementById('physicalCountBtn');
-  if (countBtn) countBtn.style.display = isAdmin ? 'block' : 'none';
+  if (countBtn) countBtn.style.display = canManageAssets ? 'block' : 'none';
   const delLink = document.getElementById('deletedItemsMenuLink');
   if (delLink) delLink.style.display = isAdmin ? 'block' : 'none';
   const historyLink = document.getElementById('countHistoryMenuLink');
-  if (historyLink) historyLink.style.display = isAdmin ? 'block' : 'none';
+  if (historyLink) historyLink.style.display = canManageAssets ? 'block' : 'none';
 }
 
 // CHANGE PASSWORD — shared across every app page via the Settings menu.

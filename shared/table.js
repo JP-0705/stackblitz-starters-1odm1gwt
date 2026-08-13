@@ -152,19 +152,19 @@ function renderTableRows(dataRows, groupByIssuedTo = false) {
 
     const row = document.createElement('tr');
     const isAdmin = activeUserSession && activeUserSession.role === 'ADMIN';
-    const canComment =
+    const canManageAssets =
       activeUserSession &&
-      (activeUserSession.role === 'ACCOUNTING' || activeUserSession.role === 'VIEWER');
+      (activeUserSession.role === 'ADMIN' || activeUserSession.role === 'ACCOUNTING');
 
     const actionButtons = `
       <td style="text-align:center; white-space:nowrap;">
         ${
-          isAdmin
+          canManageAssets
             ? `<button onclick="event.stopPropagation(); openAssetEditModal('${item.id}')" class="btn-table btn-edit-rem">✏️ Edit</button>`
             : ''
         }
         ${
-          canComment
+          activeUserSession && activeUserSession.role === 'ACCOUNTING'
             ? `<button onclick="event.stopPropagation(); openRemarksEditModal('${item.id}')" class="btn-table btn-edit-rem">💬 Remarks</button>`
             : ''
         }
@@ -174,7 +174,7 @@ function renderTableRows(dataRows, groupByIssuedTo = false) {
             : ''
         }
         ${
-          isAdmin
+          canManageAssets
             ? `<button onclick="event.stopPropagation(); deleteAssetRecord('${item.id}')" class="btn-table" style="background:#fee2e2; color:#b91c1c;">🗑️ Del</button>`
             : ''
         }
@@ -281,8 +281,12 @@ function openRowDetailModal(assetId) {
     <p style="margin:5px 0;"><strong>Useful Life:</strong> ${item.usefulLife || '---'} (${calculateRemainingUsefulLife(item.purchaseDate, item.usefulLife)} remaining)</p>
   `;
 
-  const isAdmin = activeUserSession && activeUserSession.role === 'ADMIN';
-  document.getElementById('rowDetailEditBtn').style.display = isAdmin ? 'inline-block' : 'none';
+  const canManageAssets =
+    activeUserSession &&
+    (activeUserSession.role === 'ADMIN' || activeUserSession.role === 'ACCOUNTING');
+  document.getElementById('rowDetailEditBtn').style.display = canManageAssets
+    ? 'inline-block'
+    : 'none';
 
   document.getElementById('rowDetailModal').style.display = 'flex';
 }

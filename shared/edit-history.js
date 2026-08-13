@@ -85,6 +85,7 @@ async function fetchAssetEditHistoryRows(assetId) {
 }
 
 async function openAssetEditHistoryModal(assetId) {
+  if (!activeUserSession || activeUserSession.role !== 'ADMIN') return;
   document.getElementById('assetEditHistoryTitle').innerText = `🕘 Edit History — ${assetId}`;
   const tbody = document.getElementById('assetEditHistoryTableBody');
   tbody.innerHTML =
