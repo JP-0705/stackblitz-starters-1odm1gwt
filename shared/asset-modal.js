@@ -28,7 +28,13 @@ async function deleteAssetImageFromStorage(url) {
   const marker = '/asset-images/';
   const idx = url.indexOf(marker);
   if (idx === -1) return;
-  const filePath = decodeURIComponent(url.slice(idx + marker.length));
+  let filePath;
+  try {
+    filePath = decodeURIComponent(url.slice(idx + marker.length));
+  } catch (err) {
+    console.error('Could not decode stored image path:', err);
+    return;
+  }
   const { error } = await supabaseClient.storage.from('asset-images').remove([filePath]);
   if (error) {
     console.error('Failed to delete old asset image from storage:', error);
@@ -58,12 +64,66 @@ function removeAssetImage() {
   document.getElementById('removeAssetImageBtn').style.display = 'none';
 }
 
+// ---------------------------------------------------------------------------
+// ASSET ID FORMAT:  IPHL<BRANCH>-<5 digits>   e.g.  IPHLNAGA-00001
+//                                                    IPHLMAKATI-00001
+// The number counts up separately for each branch. The ID is filled in
+// automatically when you open "Add Asset" or change the Branch dropdown, but
+// the field is read-only (it cannot be typed over).
+// ---------------------------------------------------------------------------
+function buildAssetIdPrefix(branch) {
+  return 'IPHL' + String(branch || '').replace(/[^A-Za-z]/g, '').toUpperCase() + '-';
+}
+
+async function suggestNextAssetId() {
+  const idField = document.getElementById('formAssetId');
+  const branchEl = document.getElementById('formAssetBranch');
+  if (!idField || !branchEl) return;
+  // Only when ADDING a new asset (when editing, the ID is locked).
+  if (document.getElementById('modalTargetIndexId').value !== '') return;
+
+  const prefix = buildAssetIdPrefix(branchEl.value);
+  idField.placeholder = prefix + '00000';
+  if (!supabaseClient) return;
+
+  const { data, error } = await supabaseClient
+    .from('assets')
+    .select('id')
+    .like('id', prefix + '%')
+    .order('id', { ascending: false })
+    .limit(1);
+
+  // The popup may have been closed / switched to edit while we were waiting.
+  if (document.getElementById('modalTargetIndexId').value !== '') return;
+  if (buildAssetIdPrefix(branchEl.value) !== prefix) return; // branch changed again
+
+  if (error) {
+    console.error('Could not look up the next asset ID:', error);
+    idField.value = '';
+    return;
+  }
+
+  let nextNumber = 1;
+  if (data && data.length) {
+    const match = String(data[0].id).match(/-(\d+)$/);
+    if (match) nextNumber = parseInt(match[1], 10) + 1;
+  }
+  idField.value = prefix + String(nextNumber).padStart(5, '0');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const branchEl = document.getElementById('formAssetBranch');
+  if (branchEl) branchEl.addEventListener('change', suggestNextAssetId);
+});
+
 function openAssetInsertModal() {
   originalAssetImageUrl = '';
   originalAssetSnapshot = null;
   document.getElementById('modalBoxTitle').innerText = 'Add Operational Asset Record';
   document.getElementById('modalTargetIndexId').value = '';
+  // The ID is generated automatically and cannot be typed over (prevents duplicates).
   document.getElementById('formAssetId').disabled = false;
+  document.getElementById('formAssetId').readOnly = true;
   document.getElementById('formAssetId').value = '';
   document.getElementById('formAssetName').value = '';
   document.getElementById('formAssetBrand').value = '';
@@ -94,6 +154,7 @@ function openAssetInsertModal() {
   }
   calculateModalAmount();
   document.getElementById('assetDataModal').style.display = 'flex';
+  suggestNextAssetId();
 }
 
 async function openAssetEditModal(assetId) {
@@ -103,8 +164,7 @@ async function openAssetEditModal(assetId) {
   ) {
     return;
   }
-  const db = await fetchBackendDataRows();
-  const item = db.find((i) => i.id === assetId);
+  const item = await fetchAssetById(assetId);
   if (!item) return;
 
   originalAssetImageUrl = item.imageUrl || '';
@@ -124,7 +184,7 @@ async function openAssetEditModal(assetId) {
   const editPreview = document.getElementById('formAssetImagePreview');
   const removeBtn = document.getElementById('removeAssetImageBtn');
   if (item.imageUrl) {
-    editPreview.src = item.imageUrl;
+    editPreview.src = safeUrl(item.imageUrl);
     editPreview.style.display = 'block';
     removeBtn.style.display = 'inline-block';
   } else {
@@ -158,11 +218,37 @@ async function commitAssetStorageChange() {
   const price = Number(document.getElementById('formAssetUnitPrice').value) || 0;
   const qty = Number(document.getElementById('formAssetQuantity').value) || 0;
 
+  // New assets must follow IPHL<BRANCH>-00000 and match the chosen branch.
+  // Checked first so we never upload a photo for an asset that won't save.
+  if (targetId === '') {
+    // Ask the database for the newest number again, in case someone else
+    // added an asset while this popup was open.
+    await suggestNextAssetId();
+    const idToCheck = document.getElementById('formAssetId').value.trim().toUpperCase();
+    const expectedPrefix = buildAssetIdPrefix(document.getElementById('formAssetBranch').value);
+    if (!idToCheck) {
+      return alert('Could not generate the next Asset ID. Check your internet connection and try again.');
+    }
+    if (!new RegExp('^' + expectedPrefix + '\\d{5}$').test(idToCheck)) {
+      return alert(
+        `Asset ID must look like ${expectedPrefix}00001 for the ${document.getElementById('formAssetBranch').value} branch ` +
+          `(5 digits after the dash).`
+      );
+    }
+  }
+
   // Keeps the existing image (edit mode) unless a new file was chosen;
   // stays blank on a brand-new asset with no file picked.
   let imageUrl = document.getElementById('formAssetImageUrl').value || '';
   const imageFile = document.getElementById('formAssetImageFile').files[0];
   if (imageFile) {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(imageFile.type)) {
+      return alert('Only JPG, PNG, or WEBP images are allowed.');
+    }
+    if (imageFile.size > 5 * 1024 * 1024) {
+      return alert('That image is larger than 5 MB. Please choose a smaller one.');
+    }
     const safeName = imageFile.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
     const filePath = `${Date.now()}_${safeName}`;
     const { error: uploadError } = await supabaseClient.storage
@@ -205,7 +291,7 @@ async function commitAssetStorageChange() {
   };
 
   if (targetId === '') {
-    const newId = document.getElementById('formAssetId').value.trim();
+    const newId = document.getElementById('formAssetId').value.trim().toUpperCase();
     if (!newId) return alert('Asset ID is required');
 
     const { data: existing } = await supabaseClient
@@ -216,8 +302,8 @@ async function commitAssetStorageChange() {
     if (existing)
       return alert(
         `The ID "${newId}" is already taken.\n\n` +
-          `If you don't see it in the table, it's likely sitting in Settings → Deleted Items ` +
-          `(deleting doesn't free up the ID). Restore it from there, or pick a different ID.`
+          `If you don't see it in the table, it's likely sitting in Settings → Disposed Items ` +
+          `(disposing doesn't free up the ID). Restore it from there, or pick a different ID.`
       );
 
     const newItem = {
@@ -230,8 +316,19 @@ async function commitAssetStorageChange() {
     const { error } = await supabaseClient.from('assets').insert(mapRowToDb(newItem));
     if (error) {
       console.error('Supabase insert error:', error);
+      if (imageFile) await deleteAssetImageFromStorage(imageUrl); // don't leave an orphan photo
+      if (error.code === '23505') {
+        alert(
+          `The ID "${newId}" already exists (it may belong to a disposed asset you can't see). ` +
+            `A fresh ID has been filled in — please click Save again.`
+        );
+        document.getElementById('formAssetId').value = '';
+        suggestNextAssetId();
+        return;
+      }
       return alert('Failed to save asset:\n\n' + error.message);
     }
+    await logAssetEvent(newId, 'Asset Added', '(none)', commonFields.name);
   } else {
     const { error } = await supabaseClient
       .from('assets')
@@ -239,6 +336,7 @@ async function commitAssetStorageChange() {
       .eq('id', targetId);
     if (error) {
       console.error('Supabase update error:', error);
+      if (imageFile) await deleteAssetImageFromStorage(imageUrl); // don't leave an orphan photo
       return alert('Failed to update asset:\n\n' + error.message);
     }
     await logAssetFieldChanges(targetId, originalAssetSnapshot, commonFields);
@@ -266,8 +364,7 @@ async function openRemarksEditModal(assetId) {
   ) {
     return;
   }
-  const db = await fetchBackendDataRows();
-  const item = db.find((i) => i.id === assetId);
+  const item = await fetchAssetById(assetId);
   if (!item) return;
 
   originalRemarksValue = item.remarks || '';
@@ -301,3 +398,151 @@ async function commitAccountingRemarksChange() {
   closeRemarksModal();
   if (typeof searchAssets === 'function') searchAssets();
 }
+
+// ---------------------------------------------------------------------------
+// ISSUED TO — searchable dropdown.
+// Click the field (or the ▾) to see every name / place already used in the
+// system, type to filter, then click it or use ↑ ↓ + Enter. You can still type
+// a brand-new name — it is simply saved as typed.
+// ---------------------------------------------------------------------------
+let issuedToOptions = [];
+let issuedToLoadedAt = 0;
+
+async function refreshIssuedToOptions() {
+  if (Date.now() - issuedToLoadedAt < 30000) return; // reuse for 30 seconds
+  issuedToLoadedAt = Date.now();
+  const rows = await fetchBackendDataRows({ includeMissing: true });
+  const seen = new Map(); // lower-case name -> { label, count } (so "Pantry" and "PANTRY" merge)
+  rows.forEach((r) => {
+    const value = String(r.issuedTo || '').trim();
+    if (!value) return;
+    const key = value.toLowerCase();
+    const entry = seen.get(key) || { label: value, count: 0 };
+    entry.count += 1;
+    seen.set(key, entry);
+  });
+  issuedToOptions = [...seen.values()].sort((a, b) => a.label.localeCompare(b.label));
+}
+
+function setupIssuedToPicker() {
+  const input = document.getElementById('formAssetIssuedTo');
+  if (!input || input.dataset.picker === '1') return;
+  input.dataset.picker = '1';
+  input.autocomplete = 'off'; // hides the browser's own (unrelated) suggestions
+  input.placeholder = 'Select or type a name…';
+
+  const wrap = document.createElement('div');
+  wrap.className = 'combo-wrap';
+  input.parentNode.insertBefore(wrap, input);
+  wrap.appendChild(input);
+
+  const toggle = document.createElement('button');
+  toggle.type = 'button';
+  toggle.className = 'combo-toggle';
+  toggle.tabIndex = -1;
+  toggle.setAttribute('aria-label', 'Show list');
+  toggle.textContent = '▾';
+  wrap.appendChild(toggle);
+
+  const list = document.createElement('div');
+  list.className = 'combo-list';
+  list.style.display = 'none';
+  wrap.appendChild(list);
+
+  let shown = []; // [{label, count}] currently listed; label '' = "Not issued"
+  let active = -1;
+  // The list is filtered only while the user is TYPING. Opening it by clicking the
+  // field or the ▾ always shows everything, so a name that is already filled in
+  // never hides the other choices.
+  let filtering = false;
+
+  const isOpen = () => list.style.display !== 'none';
+  const close = () => { list.style.display = 'none'; active = -1; };
+
+  function choose(label) {
+    input.value = label;
+    close();
+    input.focus();
+  }
+
+  function highlight(index) {
+    const items = list.querySelectorAll('.combo-item');
+    items.forEach((el, i) => el.classList.toggle('active', i === index));
+    active = index;
+    if (items[index]) items[index].scrollIntoView({ block: 'nearest' });
+  }
+
+  function render() {
+    const query = filtering ? input.value.trim().toLowerCase() : '';
+    const matches = issuedToOptions.filter((o) => !query || o.label.toLowerCase().includes(query));
+    shown = query ? matches : [{ label: '', count: 0 }, ...matches]; // first row = "Not issued"
+    list.textContent = '';
+
+    shown.forEach((o) => {
+      const row = document.createElement('div');
+      row.className = 'combo-item';
+      if (!filtering && o.label !== '' && o.label.toLowerCase() === input.value.trim().toLowerCase()) {
+        row.classList.add('selected'); // the value currently in the field
+      }
+      const text = document.createElement('span');
+      text.textContent = o.label === '' ? '— Not issued to anyone —' : o.label;
+      if (o.label === '') text.style.color = '#64748b';
+      row.appendChild(text);
+      if (o.count) {
+        const count = document.createElement('span');
+        count.className = 'combo-count';
+        count.textContent = `${o.count} item${o.count === 1 ? '' : 's'}`;
+        row.appendChild(count);
+      }
+      // mousedown (not click) so the input doesn't lose focus first
+      row.addEventListener('mousedown', (e) => { e.preventDefault(); choose(o.label); });
+      list.appendChild(row);
+    });
+
+    const exact = issuedToOptions.some((o) => o.label.toLowerCase() === query);
+    if (filtering && query && !exact) {
+      const hint = document.createElement('div');
+      hint.className = 'combo-empty';
+      hint.textContent = `New name: “${input.value.trim()}” — it will be saved as typed.`;
+      list.appendChild(hint);
+    }
+    active = -1;
+  }
+
+  async function open(isTyping) {
+    filtering = isTyping === true;
+    await refreshIssuedToOptions();
+    render();
+    list.style.display = 'block';
+    const selected = list.querySelector('.combo-item.selected');
+    if (selected) selected.scrollIntoView({ block: 'nearest' });
+  }
+
+  input.addEventListener('focus', () => open(false));
+  input.addEventListener('click', () => { if (!isOpen()) open(false); });
+  input.addEventListener('input', () => open(true));
+  input.addEventListener('blur', close);
+  toggle.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    if (isOpen()) close();
+    else { input.focus(); open(false); }
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (!isOpen()) return open(false);
+      highlight(Math.min(active + 1, shown.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (isOpen()) highlight(Math.max(active - 1, 0));
+    } else if (e.key === 'Enter' && isOpen() && active >= 0) {
+      e.preventDefault();
+      choose(shown[active].label);
+    } else if (e.key === 'Escape' && isOpen()) {
+      e.stopPropagation();
+      close();
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', setupIssuedToPicker);

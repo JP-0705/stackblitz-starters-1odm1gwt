@@ -411,7 +411,7 @@ body.sidebar-collapsed .sidebar-toggle-btn { display: block; }
 .table-scroll-wrapper::-webkit-scrollbar:vertical { width: 10px; }
 .table-scroll-wrapper::-webkit-scrollbar-thumb { background: #dbe0ee; border-radius: 6px; }
 .table-scroll-wrapper::-webkit-scrollbar-track { background: transparent; }
-.table-card { background: #fff; min-width: 3250px; }
+.table-card { background: #fff; min-width: 3330px; }
 table { width: 100%; border-collapse: separate; border-spacing: 0; text-align: left; font-size: 13px; table-layout: fixed; }
 
 thead { position: sticky; top: 0; z-index: 20; color: #fff; }
@@ -458,11 +458,20 @@ tr:hover td { background: #f8f9fd; }
 .form-field { margin-bottom: 14px; }
 .form-field label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 4px; color: var(--muted); }
 .form-field input, .form-field select { width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; }
+.combo-wrap { position: relative; }
+.combo-wrap input { padding-right: 32px; }
+.combo-toggle { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); border: none; background: transparent; cursor: pointer; color: #64748b; font-size: 14px; padding: 4px 8px; }
+.combo-list { position: absolute; left: 0; right: 0; top: calc(100% + 4px); max-height: 220px; overflow-y: auto; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 10px 28px rgba(15, 23, 42, 0.2); z-index: 900; }
+.combo-item { display: flex; justify-content: space-between; gap: 10px; padding: 8px 12px; font-size: 13px; cursor: pointer; }
+.combo-item:hover, .combo-item.active { background: #eef2ff; }
+.combo-item.selected { font-weight: 700; color: #1e3a8a; }
+.combo-count { color: #94a3b8; font-size: 11px; white-space: nowrap; }
+.combo-empty { padding: 8px 12px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
 .form-field input:focus, .form-field select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.16); }
 .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; }
-.btn-table { padding: 4px 8px; border: none; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; }
+.btn-table { white-space: nowrap; padding: 4px 8px; border: none; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; }
 .btn-edit-rem { background: var(--accent); color: #fff; }
 
 .analytics-view { padding: 24px; overflow-y: auto; }
@@ -505,9 +514,22 @@ tr:hover td { background: #f8f9fd; }
 .variance-mismatch { color: #dc2626; font-weight: 700; }
 
 .print-only-title,
-.print-only-count {
+.print-only-count,
+.print-only-report {
   display: none;
 }
+
+/* Monthly Report tables (on-screen preview; print version is compacted below) */
+.report-head h2 { font-size: 16px; margin: 0 0 4px; color: var(--ink); }
+.report-head p { font-size: 12px; color: #64748b; margin: 0 0 12px; }
+.report-section-title { margin: 16px 0 6px; font-size: 13px; color: var(--ink); }
+.report-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.report-table th { background: #0b1d33; color: #fff; text-align: left; padding: 6px 8px; font-size: 11px; }
+.report-table td { padding: 5px 8px; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
+.report-summary td { font-size: 16px; font-weight: 700; text-align: center; }
+.report-summary th { text-align: center; }
+
+@page { margin: 8mm; }
 
 @media print {
   .no-print {
@@ -566,23 +588,89 @@ tr:hover td { background: #f8f9fd; }
     display: block !important;
   }
 
-  .print-only-count h2 { font-size: 16px; margin-bottom: 4px; }
-  .print-only-count p { font-size: 11px; color: #475569; margin-bottom: 12px; }
+  /* ---- MONTHLY REPORT print mode ---- */
+  body.print-mode-report .print-only-title,
+  body.print-mode-report .print-only-count,
+  body.print-mode-report .data-container {
+    display: none !important;
+  }
+  body.print-mode-report .print-only-report {
+    display: block !important;
+  }
+  .print-only-report .report-head h2 { font-size: 11px; margin: 0 0 1px; color: #0f172a; }
+  .print-only-report .report-head p { font-size: 7px; color: #475569; margin: 0 0 4px; }
+  .print-only-report .report-section-title { font-size: 8px; margin: 8px 0 2px; color: #0f172a; break-after: avoid; }
+  .print-only-report .report-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: auto;
+    font-size: 7px;
+    line-height: 1.15;
+  }
+  .print-only-report .report-table th,
+  .print-only-report .report-table td {
+    border: 1px solid #334155;
+    padding: 1px 3px;
+    text-align: left;
+  }
+  .print-only-report .report-table th {
+    background: #0b1d33 !important;
+    color: #fff !important;
+    font-size: 6.5px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-only-report .report-summary td { font-size: 10px; text-align: center; }
+  .print-only-report .report-summary th { text-align: center; }
+  .print-only-report .report-table thead { display: table-header-group; }
+  .print-only-report .report-table tr { break-inside: avoid; page-break-inside: avoid; }
+
+  /* ---- COMPACT COUNT SHEET (para makatipid sa papel) ----
+     Para mas malaki o mas maliit: palitan lang ang font-size at padding
+     sa .count-sheet-table sa ibaba. Halimbawa 6px = mas maraming row bawat
+     pahina, 8px = mas madaling basahin. */
+  .print-only-count h2 { font-size: 10px; margin: 0 0 1px; }
+  .print-only-count p { font-size: 7px; color: #475569; margin: 0 0 4px; }
 
   .count-sheet-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 12px;
+    table-layout: fixed;
+    font-size: 7px;
+    line-height: 1.15;
   }
+  /* Lapad ng bawat column (kabuuan = 100%). Ang ID ay hindi na puputulin. */
+  .count-sheet-table th:nth-child(1) { width: 13%; }  /* INNOV-ID */
+  .count-sheet-table th:nth-child(2) { width: 20%; }  /* NAME */
+  .count-sheet-table th:nth-child(3) { width: 8%; }   /* BRAND */
+  .count-sheet-table th:nth-child(4) { width: 10%; }  /* CATEGORY */
+  .count-sheet-table th:nth-child(5) { width: 6%; }   /* BRANCH */
+  .count-sheet-table th:nth-child(6) { width: 12%; }  /* ISSUED TO */
+  .count-sheet-table th:nth-child(7) { width: 6%; }   /* SYSTEM QTY */
+  .count-sheet-table th:nth-child(8) { width: 7%; }   /* COUNTED QTY */
+  .count-sheet-table th:nth-child(9) { width: 8%; }   /* VARIANCE */
+  .count-sheet-table th:nth-child(10) { width: 10%; }  /* REMARKS */
+  .count-sheet-table td:first-child:not([colspan]) { white-space: nowrap; }
   .count-sheet-table th,
   .count-sheet-table td {
     border: 1px solid #334155;
-    padding: 6px 8px;
+    padding: 1px 3px;
     text-align: left;
+    overflow-wrap: anywhere;
   }
   .count-sheet-table th {
     background: #0b1d33 !important;
     color: #fff !important;
+    font-size: 6.5px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  /* Uulitin ang header sa bawat pahina; hindi mahahati ang isang row */
+  .count-sheet-table thead { display: table-header-group; }
+  .count-sheet-table tr { page-break-inside: avoid; break-inside: avoid; }
+  .count-sheet-table .group-header-row td {
+    background: #e2e8f0 !important;
+    font-weight: 700;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }

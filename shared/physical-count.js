@@ -13,7 +13,7 @@ function buildCountSheetRowsHtml(rows, groupByIssuedTo, rowHtmlFn, totalColumns)
       const currentIssuedTo = row.issuedTo || 'UNASSIGNED';
       if (currentIssuedTo !== lastIssuedTo) {
         lastIssuedTo = currentIssuedTo;
-        html += `<tr class="group-header-row"><td colspan="${totalColumns}">ISSUED TO: ${currentIssuedTo}</td></tr>`;
+        html += `<tr class="group-header-row"><td colspan="${totalColumns}">ISSUED TO: ${escapeHtml(currentIssuedTo)}</td></tr>`;
       }
     }
     html += rowHtmlFn(row);
@@ -55,16 +55,16 @@ async function printBlankCountSheet() {
     groupByIssuedTo,
     (item) => `
       <tr>
-        <td>${item.id}</td>
-        <td>${item.name}</td>
-        <td>${item.brand || '---'}</td>
-        <td>${item.category}</td>
-        <td>${item.branch || 'NAGA'}</td>
-        <td>${item.issuedTo || '---'}</td>
-        <td>${item.qty || 1}</td>
-        <td style="min-width:70px;">&nbsp;</td>
-        <td style="min-width:70px;">&nbsp;</td>
-        <td style="min-width:90px;">&nbsp;</td>
+        <td>${escapeHtml(item.id)}</td>
+        <td>${escapeHtml(item.name)}</td>
+        <td>${escapeHtml(item.brand || '---')}</td>
+        <td>${escapeHtml(item.category)}</td>
+        <td>${escapeHtml(item.branch || 'NAGA')}</td>
+        <td>${escapeHtml(item.issuedTo || '---')}</td>
+        <td>${escapeHtml(item.qty || 1)}</td>
+        <td style="min-width:50px;">&nbsp;</td>
+        <td style="min-width:50px;">&nbsp;</td>
+        <td style="min-width:80px;">&nbsp;</td>
       </tr>
     `,
     10
@@ -85,8 +85,7 @@ async function openPhysicalCountModal() {
     return alert('Not connected to the database. Check the console for details.');
   }
 
-  const today = new Date().toISOString().slice(0, 10);
-  document.getElementById('countEntryDate').value = today;
+  document.getElementById('countEntryDate').value = todayLocalISO();
   const scopeCategoryText =
     currentCategoryFilter === 'ALL' ? 'All Categories' : currentCategoryFilter;
   const scopeBranchText =
@@ -106,40 +105,70 @@ async function openPhysicalCountModal() {
     currentCountEntryRows.sort((a, b) => (a.issuedTo || '').localeCompare(b.issuedTo || ''));
   }
 
+  // Extra column: tick "Missing" for an item that could NOT be found.
+  const headRow = document.querySelector('#countEntryModal thead tr');
+  if (headRow && !headRow.querySelector('.th-missing')) {
+    headRow.insertAdjacentHTML('beforeend', '<th class="th-missing">NOT FOUND?</th>');
+  }
+
   const tbody = document.getElementById('countEntryTableBody');
   tbody.innerHTML = buildCountSheetRowsHtml(
     currentCountEntryRows,
     groupByIssuedTo,
     (item) => `
-      <tr>
-        <td style="font-family:monospace;">${item.id}</td>
-        <td>${item.name}</td>
-        <td>${item.branch || 'NAGA'}</td>
-        <td>${item.qty || 1}</td>
+      <tr data-row-asset-id="${escapeHtml(item.id)}">
+        <td style="font-family:monospace;">${escapeHtml(item.id)}</td>
+        <td>${escapeHtml(item.name)}</td>
+        <td>${escapeHtml(item.branch || 'NAGA')}</td>
+        <td>${escapeHtml(item.qty || 1)}</td>
         <td>
           <input
             type="number"
             min="0"
-            data-asset-id="${item.id}"
-            data-system-qty="${item.qty || 1}"
+            data-asset-id="${escapeHtml(item.id)}"
+            data-system-qty="${escapeHtml(item.qty || 1)}"
             class="countedQtyInput"
-            value="${item.qty || 1}"
-            oninput="updateCountVarianceDisplay('${item.id}')"
+            value="${escapeHtml(item.qty || 1)}"
           />
         </td>
-        <td id="variance-${item.id}" class="variance-zero">0</td>
+        <td class="variance-zero variance-cell">0</td>
         <td>
           <input
             type="text"
-            data-asset-id="${item.id}"
+            data-asset-id="${escapeHtml(item.id)}"
             class="countRemarksInput"
             placeholder="Optional note..."
           />
         </td>
+        <td style="white-space:nowrap;">
+          <label style="font-size:12px; cursor:pointer;">
+            <input type="checkbox" class="countMissingCheck" /> Missing
+          </label>
+        </td>
       </tr>
     `,
-    7
+    8
   );
+
+  // Live variance display — attached here instead of inline oninput so an
+  // unusual asset ID can never break (or inject into) the page.
+  tbody.querySelectorAll('.countedQtyInput').forEach((input) => {
+    input.addEventListener('input', () => updateCountVarianceDisplay(input));
+  });
+  // Ticking "Missing" sets the counted qty to 0 and locks it; unticking restores it.
+  tbody.querySelectorAll('.countMissingCheck').forEach((box) => {
+    box.addEventListener('change', () => {
+      const input = box.closest('tr').querySelector('.countedQtyInput');
+      if (box.checked) {
+        input.value = 0;
+        input.disabled = true;
+      } else {
+        input.disabled = false;
+        input.value = input.dataset.systemQty;
+      }
+      updateCountVarianceDisplay(input);
+    });
+  });
 
   document.getElementById('countEntryModal').style.display = 'flex';
 }
@@ -148,15 +177,15 @@ function closeCountEntryModal() {
   document.getElementById('countEntryModal').style.display = 'none';
 }
 
-function updateCountVarianceDisplay(assetId) {
-  const input = document.querySelector(`.countedQtyInput[data-asset-id="${assetId}"]`);
+function updateCountVarianceDisplay(input) {
   const systemQty = Number(input.dataset.systemQty) || 0;
   const countedQty = Number(input.value) || 0;
   const variance = countedQty - systemQty;
 
-  const cell = document.getElementById(`variance-${assetId}`);
+  const cell = input.closest('tr').querySelector('.variance-cell');
+  if (!cell) return;
   cell.innerText = variance > 0 ? `+${variance}` : `${variance}`;
-  cell.className = variance === 0 ? 'variance-zero' : 'variance-mismatch';
+  cell.className = (variance === 0 ? 'variance-zero' : 'variance-mismatch') + ' variance-cell';
 }
 
 async function saveAndPrintCount() {
@@ -171,20 +200,35 @@ async function saveAndPrintCount() {
   const countRecords = [];
   const sheetRows = [];
 
+  const missingEntries = [];
+
   inputs.forEach((input) => {
     const assetId = input.dataset.assetId;
     const systemQty = Number(input.dataset.systemQty) || 0;
-    const countedQty = Number(input.value) || 0;
+    const isMissing = !!input.closest('tr').querySelector('.countMissingCheck:checked');
+    const countedQty = isMissing ? 0 : Number(input.value) || 0;
     const variance = countedQty - systemQty;
     const item = currentCountEntryRows.find((i) => i.id === assetId);
-    const remarksInput = document.querySelector(
-      `.countRemarksInput[data-asset-id="${assetId}"]`
-    );
-    const remarks = remarksInput ? remarksInput.value.trim() : '';
+    if (!item) return; // row no longer exists — skip instead of saving junk
+    const remarksInput = input.closest('tr').querySelector('.countRemarksInput');
+    const typedRemarks = remarksInput ? remarksInput.value.trim() : '';
+    // Missing items show "MISSING" on the printed sheet and in Count History.
+    const remarks = isMissing ? (typedRemarks ? `MISSING — ${typedRemarks}` : 'MISSING') : typedRemarks;
 
     countRecords.push({ asset_id: assetId, count_date: countDate, counted_qty: countedQty });
     sheetRows.push({ ...item, systemQty, countedQty, variance, remarks });
+    if (isMissing) missingEntries.push({ item, remarks: typedRemarks });
   });
+
+  if (missingEntries.length > 0) {
+    const confirmed = await showConfirm(
+      `${missingEntries.length} item(s) are marked MISSING.\n\n` +
+        `They will be removed from the dashboard and from future physical counts, ` +
+        `and listed under Settings → Missing Items (where they can be marked Found later).\n\nContinue?`,
+      { title: '🔍 Mark Items as Missing', confirmLabel: 'Save Count', confirmColor: '#b45309' }
+    );
+    if (!confirmed) return;
+  }
 
   const { error } = await supabaseClient
     .from('asset_counts')
@@ -193,6 +237,18 @@ async function saveAndPrintCount() {
   if (error) {
     console.error('Supabase count save error:', error);
     return alert('Failed to save physical count:\n\n' + error.message);
+  }
+
+  if (missingEntries.length > 0) {
+    const result = await markAssetsMissingFromCount(missingEntries, countDate);
+    if (result.failed.length > 0) {
+      alert(
+        `The count was saved, but ${result.failed.length} item(s) could NOT be marked missing:\n\n` +
+          result.failed.slice(0, 8).map((f) => `${f.id}: ${f.message}`).join('\n') +
+          `\n\nTip: make sure the latest SQL update (Missing/Dispose columns) was run in Supabase.`
+      );
+    }
+    if (typeof searchAssets === 'function') searchAssets();
   }
 
   const groupByIssuedTo = document.getElementById('groupByIssuedToCheckbox').checked;
@@ -231,16 +287,16 @@ function renderCountSheetPrintArea(countDate, sheetRows, groupByIssuedTo = false
       const varianceText = row.variance > 0 ? `+${row.variance}` : `${row.variance}`;
       return `
         <tr>
-          <td>${row.id}</td>
-          <td>${row.name}</td>
-          <td>${row.brand || '---'}</td>
-          <td>${row.category}</td>
-          <td>${row.branch || 'NAGA'}</td>
-          <td>${row.issuedTo || '---'}</td>
-          <td>${row.systemQty}</td>
-          <td>${row.countedQty}</td>
-          <td ${varianceClass}>${varianceText}</td>
-          <td>${row.remarks || '---'}</td>
+          <td>${escapeHtml(row.id)}</td>
+          <td>${escapeHtml(row.name)}</td>
+          <td>${escapeHtml(row.brand || '---')}</td>
+          <td>${escapeHtml(row.category)}</td>
+          <td>${escapeHtml(row.branch || 'NAGA')}</td>
+          <td>${escapeHtml(row.issuedTo || '---')}</td>
+          <td>${escapeHtml(row.systemQty)}</td>
+          <td>${escapeHtml(row.countedQty)}</td>
+          <td ${varianceClass}>${escapeHtml(varianceText)}</td>
+          <td>${escapeHtml(row.remarks || '---')}</td>
         </tr>
       `;
     },

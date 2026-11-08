@@ -30,6 +30,12 @@ async function executeSignup() {
     errorMsg.style.display = 'block';
     return;
   }
+  if (password.length < 10) {
+    passwordField.classList.add('auth-input-error');
+    errorMsg.innerText = 'Password must be at least 10 characters.';
+    errorMsg.style.display = 'block';
+    return;
+  }
   if (password !== confirmPassword) {
     errorMsg.innerText = 'Passwords do not match.';
     errorMsg.style.display = 'block';

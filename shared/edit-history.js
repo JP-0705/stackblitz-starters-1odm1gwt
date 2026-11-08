@@ -65,6 +65,23 @@ async function logAssetFieldChanges(assetId, oldSnapshot, newFields) {
   }
 }
 
+// Logs a whole-asset event (not a single field change) so it shows up in the
+// asset's History and in the Monthly Report. Used for: 'Asset Added',
+// 'Asset Deleted', 'Asset Restored'. Best-effort, like field-change logging.
+async function logAssetEvent(assetId, label, oldValue, newValue) {
+  if (!supabaseClient) return;
+  const { error } = await supabaseClient.from('asset_edit_history').insert({
+    asset_id: assetId,
+    edited_by: activeUserSession ? activeUserSession.email : null,
+    field_changed: label,
+    old_value: oldValue || '(none)',
+    new_value: newValue || '(none)',
+  });
+  if (error) {
+    console.error('Failed to log asset event (' + label + '):', error);
+  }
+}
+
 async function fetchAssetEditHistoryRows(assetId) {
   if (!supabaseClient) {
     console.error('Supabase client not initialized — cannot load edit history.');
@@ -81,7 +98,7 @@ async function fetchAssetEditHistoryRows(assetId) {
     alert('Could not load edit history from the database:\n\n' + error.message);
     return [];
   }
-  return data;
+  return data || [];
 }
 
 async function openAssetEditHistoryModal(assetId) {
@@ -105,11 +122,11 @@ async function openAssetEditHistoryModal(assetId) {
     const editedAtDisplay = row.edited_at ? new Date(row.edited_at).toLocaleString() : '---';
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td style="font-size:12px;">${editedAtDisplay}</td>
-      <td style="font-size:12px;">${row.edited_by || '---'}</td>
-      <td style="font-weight:600;">${row.field_changed}</td>
-      <td style="color:#dc2626;">${row.old_value || '---'}</td>
-      <td style="color:#16a34a;">${row.new_value || '---'}</td>
+      <td style="font-size:12px;">${escapeHtml(editedAtDisplay)}</td>
+      <td style="font-size:12px;">${escapeHtml(row.edited_by || '---')}</td>
+      <td style="font-weight:600;">${escapeHtml(row.field_changed)}</td>
+      <td style="color:#dc2626;">${escapeHtml(row.old_value || '---')}</td>
+      <td style="color:#16a34a;">${escapeHtml(row.new_value || '---')}</td>
     `;
     tbody.appendChild(tr);
   });

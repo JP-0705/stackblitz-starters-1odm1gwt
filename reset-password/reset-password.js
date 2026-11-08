@@ -103,8 +103,8 @@ async function executePasswordReset() {
     errorMsg.style.display = 'block';
     return;
   }
-  if (newPassword.length < 6) {
-    errorMsg.innerText = 'Password must be at least 6 characters.';
+  if (newPassword.length < 10) {
+    errorMsg.innerText = 'Password must be at least 10 characters.';
     errorMsg.style.display = 'block';
     return;
   }

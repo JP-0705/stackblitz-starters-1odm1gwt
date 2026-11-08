@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "scripts": {
+    "test:all": "node id-test.js .. && node xss-test.js .. && node crash-test.js .. && node actions-test.js .. && node combo-test.js .. && node csp-test.js .. && node e2e-report.js .. ./out"
+  },
+  "dependencies": { "jsdom": "^31.0.0", "playwright": "^1.50.0" }
+}

@@ -1,14 +1,20 @@
 // Shared session/auth handling.
 // Login is a separate page now (/login/), so every "app" page must check
 // for a session on load and redirect to /login/ if none is found.
-let activeUserSession =
-  JSON.parse(sessionStorage.getItem('ACTIVE_SESSION')) || null;
+function loadStoredSessionSafe() {
+  try {
+    return JSON.parse(sessionStorage.getItem('ACTIVE_SESSION') || 'null');
+  } catch (err) {
+    sessionStorage.removeItem('ACTIVE_SESSION');
+    return null;
+  }
+}
+let activeUserSession = loadStoredSessionSafe();
 
 // Call at the top of every app page's init. Redirects to /login/ (and
 // returns null) if nobody is signed in.
 function requireAuth() {
-  activeUserSession =
-    JSON.parse(sessionStorage.getItem('ACTIVE_SESSION')) || null;
+  activeUserSession = loadStoredSessionSafe();
   if (!activeUserSession) {
     window.location.href = '/login/';
     return null;
@@ -67,6 +73,11 @@ async function executeChangePassword() {
   if (!activeUserSession) return;
   if (!supabaseClient) {
     errorMsg.innerText = 'Not connected to the database. Check the console.';
+    errorMsg.style.display = 'block';
+    return;
+  }
+  if (newPw.length < 10) {
+    errorMsg.innerText = 'New password must be at least 10 characters.';
     errorMsg.style.display = 'block';
     return;
   }

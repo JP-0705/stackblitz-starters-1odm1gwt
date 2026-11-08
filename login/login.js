@@ -13,7 +13,7 @@ function toggleForgotPassword() {
   // If someone is already logged in on this browser, lock the field to
   // their own email — no reason to let a signed-in person type in
   // someone else's address and send them an unsolicited reset link.
-  const existingSession = JSON.parse(sessionStorage.getItem('ACTIVE_SESSION') || 'null');
+  const existingSession = readStoredSession();
   if (existingSession && existingSession.email) {
     emailField.value = existingSession.email;
     emailField.readOnly = true;
@@ -157,7 +157,7 @@ const passwordField = document.getElementById('authPassword');
 
 // If already logged in, skip straight to the dashboard.
 document.addEventListener('DOMContentLoaded', async () => {
-  const existing = JSON.parse(sessionStorage.getItem('ACTIVE_SESSION')) || null;
+  const existing = readStoredSession();
   if (existing) {
     window.location.href = '/dashboard/';
     return;

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Reset Password — IMS</title>
     <link rel="stylesheet" href="/shared/styles.css" />
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
   </head>
   <body class="standalone-auth-page">
     <div class="bg-decor">
@@ -26,7 +26,7 @@
       <div id="resetFormState" style="display:none;">
         <p class="gt-title">Set a new password</p>
         <p class="auth-subtitle">Choose a new password for your account.</p>
-        <input type="password" required minlength="6" id="newPassword" class="auth-input" placeholder="New Password" />
+        <input type="password" required minlength="10" id="newPassword" class="auth-input" placeholder="New Password" />
         <input type="password" required id="confirmNewPassword" class="auth-input" placeholder="Confirm New Password"/>
         <div id="resetErrorMsg" class="auth-error"></div>
         <button onclick="executePasswordReset()" id="resetSubmitBtn" class="auth-btn">SET NEW PASSWORD</button>

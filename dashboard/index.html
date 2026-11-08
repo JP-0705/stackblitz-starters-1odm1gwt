@@ -6,10 +6,10 @@
     <title>Dashboard — IMS</title>
     <link rel="stylesheet" href="/shared/styles.css" />
     <script
-      src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+      src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"
       onerror="document.getElementById('diagBanner').style.display='block'; document.getElementById('diagBanner').innerText='DIAGNOSTIC: The Supabase library failed to load from the CDN (network/ad-blocker/offline issue).';"
     ></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
     <div
       id="diagBanner"
       style="
@@ -146,7 +146,7 @@
             Role: <strong id="roleLabelDisplay">GUEST</strong>
           </div>
           <a href="#" id="deletedItemsMenuLink" onclick="openDeletedItemsModal(); closeSettingsMenu(); return false;" style="display:none;">
-            🗑️ Deleted Items
+            📦 Disposed Items
           </a>
           <a href="#" id="countHistoryMenuLink" onclick="openCountHistoryModal(); closeSettingsMenu(); return false;" style="display:none;">
             🕘 Count History
@@ -245,7 +245,7 @@
                 <col style="width: 120px" />
                 <col style="width: 120px" />
                 <col style="width: 160px" />
-                <col style="width: 220px" />
+                <col style="width: 300px" />
               </colgroup>
               <thead>
                 <tr class="header-category-row">
@@ -305,7 +305,7 @@
         <div class="form-grid-2">
           <div class="form-field">
             <label>Asset ID</label>
-            <input type="text" id="formAssetId" placeholder="IPHL-APP-XXX" />
+            <input type="text" id="formAssetId" placeholder="IPHLNAGA-00000" readonly title="Automatic - cannot be edited" style="background:#f1f5f9;cursor:not-allowed;font-weight:600;" />
           </div>
           <div class="form-field">
             <label>Asset Name</label>
@@ -518,11 +518,11 @@
 
     <div id="deletedItemsModal" class="modal-backdrop no-print">
       <div class="modal-box modal-box-wide">
-        <h3>🗑️ Deleted Items</h3>
+        <h3>📦 Disposed Items</h3>
         <p style="font-size: 12px; color: #64748b; margin-bottom: 16px;">
-          Deleted assets are hidden from every page but are not permanently
-          erased. Restore an item to bring it back, or leave it here — only
-          the database owner can permanently remove it.
+          Disposed assets (sold, donated, scrapped, lost, ...) are hidden from every
+          page but are never erased — the reason and date stay on record. Restore an
+          item if it was disposed by mistake.
         </p>
         <div class="count-entry-scroll">
           <table class="count-entry-table">
@@ -532,8 +532,10 @@
                 <th>NAME</th>
                 <th>CATEGORY</th>
                 <th>BRANCH</th>
-                <th>DELETED BY</th>
-                <th>DELETED AT</th>
+                <th>REASON</th>
+                <th>DISPOSAL DATE</th>
+                <th>DISPOSED BY</th>
+                <th>REMARKS</th>
                 <th>ACTION</th>
               </tr>
             </thead>
@@ -646,9 +648,11 @@
     <script src="/shared/table.js"></script>
     <script src="/shared/asset-modal.js"></script>
     <script src="/shared/deleted-items.js"></script>
+    <script src="/shared/lifecycle.js"></script>
     <script src="/shared/physical-count.js"></script>
     <script src="/shared/count-history.js"></script>
     <script src="/shared/edit-history.js"></script>
+    <script src="/shared/monthly-report.js"></script>
     <script>
       document.addEventListener('DOMContentLoaded', () => {
         if (!requireAuth()) return;

@@ -81,7 +81,9 @@ function populateAssetTypeFilterOptions(scopedItems) {
 
   select.innerHTML =
     '<option value="ALL">ALL TYPES</option>' +
-    distinctTypes.map((type) => `<option value="${type}">${type}</option>`).join('');
+    distinctTypes
+      .map((type) => `<option value="${escapeHtml(type)}">${escapeHtml(type)}</option>`)
+      .join('');
 
   select.value = distinctTypes.includes(currentValue) ? currentValue : 'ALL';
 }
@@ -137,6 +139,7 @@ function renderTableRows(dataRows, groupByIssuedTo = false) {
   window.lastRenderedAssetRows = dataRows;
 
   const TOTAL_TABLE_COLUMNS = 24;
+  const e = escapeHtml;
 
   dataRows.forEach((item) => {
     if (groupByIssuedTo) {
@@ -145,7 +148,7 @@ function renderTableRows(dataRows, groupByIssuedTo = false) {
         lastIssuedTo = currentIssuedTo;
         const groupRow = document.createElement('tr');
         groupRow.className = 'group-header-row';
-        groupRow.innerHTML = `<td colspan="${TOTAL_TABLE_COLUMNS}">ISSUED TO: ${currentIssuedTo}</td>`;
+        groupRow.innerHTML = `<td colspan="${TOTAL_TABLE_COLUMNS}">ISSUED TO: ${escapeHtml(currentIssuedTo)}</td>`;
         tbody.appendChild(groupRow);
       }
     }
@@ -160,22 +163,22 @@ function renderTableRows(dataRows, groupByIssuedTo = false) {
       <td style="text-align:center; white-space:nowrap;">
         ${
           canManageAssets
-            ? `<button onclick="event.stopPropagation(); openAssetEditModal('${item.id}')" class="btn-table btn-edit-rem">✏️ Edit</button>`
+            ? `<button data-action="edit" data-id="${e(item.id)}" class="btn-table btn-edit-rem">✏️ Edit</button>`
             : ''
         }
         ${
           activeUserSession && activeUserSession.role === 'ACCOUNTING'
-            ? `<button onclick="event.stopPropagation(); openRemarksEditModal('${item.id}')" class="btn-table btn-edit-rem">💬 Remarks</button>`
+            ? `<button data-action="remarks" data-id="${e(item.id)}" class="btn-table btn-edit-rem">💬 Remarks</button>`
             : ''
         }
         ${
           isAdmin
-            ? `<button onclick="event.stopPropagation(); openAssetEditHistoryModal('${item.id}')" class="btn-table btn-edit-rem">🕘 History</button>`
+            ? `<button data-action="history" data-id="${e(item.id)}" class="btn-table btn-edit-rem">🕘 History</button>`
             : ''
         }
         ${
           canManageAssets
-            ? `<button onclick="event.stopPropagation(); deleteAssetRecord('${item.id}')" class="btn-table" style="background:#fee2e2; color:#b91c1c;">🗑️ Del</button>`
+            ? `<button data-action="dispose" data-id="${e(item.id)}" class="btn-table" style="background:#fee2e2; color:#b91c1c;">📦 Dispose</button>`
             : ''
         }
       </td>
@@ -206,8 +209,9 @@ function renderTableRows(dataRows, groupByIssuedTo = false) {
     };
     const noteClass = noteClassMap[item.note] || 'note-active';
 
-    const imageCell = item.imageUrl
-      ? `<img src="${item.imageUrl}" alt="${item.name || 'asset'}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; cursor:pointer;" onclick="event.stopPropagation(); showAssetImagePreview('${item.imageUrl}', '${(item.name || 'Asset').replace(/'/g, "\\'")}')" />`
+    const safeImg = safeUrl(item.imageUrl);
+    const imageCell = safeImg
+      ? `<img class="asset-thumb" data-url="${e(safeImg)}" data-name="${e(item.name || 'Asset')}" src="${e(safeImg)}" alt="${e(item.name || 'asset')}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; cursor:pointer;" />`
       : '<span style="color:#94a3b8; font-size:11px;">No Image</span>';
 
     const remainingLife = calculateRemainingUsefulLife(item.purchaseDate, item.usefulLife);
@@ -215,31 +219,49 @@ function renderTableRows(dataRows, groupByIssuedTo = false) {
       remainingLife === 'EXPIRED' ? 'color:#dc2626; font-weight:700;' : '';
 
     row.innerHTML = `
-      <td style="font-family:monospace; font-weight:700; color:#0f172a;">${item.id}</td>
-      <td style="font-weight:600;">${item.name}</td>
-      <td>${item.brand || '---'}</td>
-      <td>${item.description || '---'}</td>
-      <td>${item.model || '---'}</td>
-      <td>${item.serialNumber || '---'}</td>
-      <td>${item.itemCategory || '---'}</td>
+      <td style="font-family:monospace; font-weight:700; color:#0f172a;">${e(item.id)}</td>
+      <td style="font-weight:600;">${e(item.name)}</td>
+      <td>${e(item.brand || '---')}</td>
+      <td>${e(item.description || '---')}</td>
+      <td>${e(item.model || '---')}</td>
+      <td>${e(item.serialNumber || '---')}</td>
+      <td>${e(item.itemCategory || '---')}</td>
       <td>${imageCell}</td>
-      <td style="color:#64748b; font-size:11px;">${item.category || '---'}</td>
-      <td>${item.branch || 'NAGA'}</td>
-      <td>${item.issuedTo || '---'}</td>
-      <td>${item.purchaseDate || '---'}</td>
-      <td>${item.unit || 'PIECE'}</td>
+      <td style="color:#64748b; font-size:11px;">${e(item.category || '---')}</td>
+      <td>${e(item.branch || 'NAGA')}</td>
+      <td>${e(item.issuedTo || '---')}</td>
+      <td>${e(item.purchaseDate || '---')}</td>
+      <td>${e(item.unit || 'PIECE')}</td>
       <td>₱ ${Number(item.unitPrice || 0).toLocaleString()}</td>
-      <td>${item.qty || 1}</td>
+      <td>${e(item.qty || 1)}</td>
       <td style="font-weight:600;">₱ ${Number(item.amount || 0).toLocaleString()}</td>
-      <td style="${remainingLifeStyle}">${remainingLife}</td>
-      <td>${calculateAssetAge(item.purchaseDate)}</td>
-      <td><span class="status-pill ${conditionClass}">${item.condition || 'IN CONDITION'}</span></td>
-      <td><span class="status-pill ${noteClass}">${item.note || 'ACTIVE'}</span></td>
-      <td><span class="status-pill ${statusClass}">${item.status || 'IN USE'}</span></td>
-      <td>${item.trackingDate || '---'}</td>
-      <td style="font-style:italic; color:#475569;">${item.remarks || '---'}</td>
+      <td style="${remainingLifeStyle}">${e(remainingLife)}</td>
+      <td>${e(calculateAssetAge(item.purchaseDate))}</td>
+      <td><span class="status-pill ${conditionClass}">${e(item.condition || 'IN CONDITION')}</span></td>
+      <td><span class="status-pill ${noteClass}">${e(item.note || 'ACTIVE')}</span></td>
+      <td><span class="status-pill ${statusClass}">${e(item.status || 'IN USE')}</span></td>
+      <td>${e(item.trackingDate || '---')}</td>
+      <td style="font-style:italic; color:#475569;">${e(item.remarks || '---')}</td>
       ${actionButtons}
     `;
+    row.querySelectorAll('button[data-action]').forEach((btn) => {
+      btn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const id = btn.dataset.id;
+        const action = btn.dataset.action;
+        if (action === 'edit') openAssetEditModal(id);
+        else if (action === 'remarks') openRemarksEditModal(id);
+        else if (action === 'history') openAssetEditHistoryModal(id);
+        else if (action === 'dispose') disposeAssetRecord(id);
+      });
+    });
+    const thumb = row.querySelector('img.asset-thumb');
+    if (thumb) {
+      thumb.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        showAssetImagePreview(thumb.dataset.url, thumb.dataset.name);
+      });
+    }
     row.style.cursor = 'pointer';
     row.addEventListener('click', () => openRowDetailModal(item.id));
     tbody.appendChild(row);
@@ -266,19 +288,20 @@ function openRowDetailModal(assetId) {
 
   currentRowDetailAssetId = assetId;
 
+  const e = escapeHtml;
   const body = document.getElementById('rowDetailBody');
   body.innerHTML = `
-    <p style="margin:5px 0;"><strong>Date:</strong> ${item.purchaseDate || '---'}</p>
-    <p style="margin:5px 0;"><strong>Asset Name:</strong> ${item.name || '---'}</p>
-    <p style="margin:5px 0;"><strong>Description:</strong> ${item.description || '---'}</p>
-    <p style="margin:5px 0;"><strong>Serial:</strong> ${item.serialNumber || '---'}</p>
-    <p style="margin:5px 0;"><strong>Category:</strong> ${item.category || '---'}</p>
-    <p style="margin:5px 0;"><strong>Branch:</strong> ${item.branch || 'NAGA'}</p>
-    <p style="margin:5px 0;"><strong>Issued To:</strong> ${item.issuedTo || '---'}</p>
-    <p style="margin:5px 0;"><strong>Status:</strong> ${item.status || '---'}</p>
-    <p style="margin:5px 0;"><strong>Quantity:</strong> ${item.qty || 1}</p>
+    <p style="margin:5px 0;"><strong>Date:</strong> ${e(item.purchaseDate || '---')}</p>
+    <p style="margin:5px 0;"><strong>Asset Name:</strong> ${e(item.name || '---')}</p>
+    <p style="margin:5px 0;"><strong>Description:</strong> ${e(item.description || '---')}</p>
+    <p style="margin:5px 0;"><strong>Serial:</strong> ${e(item.serialNumber || '---')}</p>
+    <p style="margin:5px 0;"><strong>Category:</strong> ${e(item.category || '---')}</p>
+    <p style="margin:5px 0;"><strong>Branch:</strong> ${e(item.branch || 'NAGA')}</p>
+    <p style="margin:5px 0;"><strong>Issued To:</strong> ${e(item.issuedTo || '---')}</p>
+    <p style="margin:5px 0;"><strong>Status:</strong> ${e(item.status || '---')}</p>
+    <p style="margin:5px 0;"><strong>Quantity:</strong> ${e(item.qty || 1)}</p>
     <p style="margin:5px 0;"><strong>Price:</strong> ₱ ${Number(item.unitPrice || 0).toLocaleString()}</p>
-    <p style="margin:5px 0;"><strong>Useful Life:</strong> ${item.usefulLife || '---'} (${calculateRemainingUsefulLife(item.purchaseDate, item.usefulLife)} remaining)</p>
+    <p style="margin:5px 0;"><strong>Useful Life:</strong> ${e(item.usefulLife || '---')} (${escapeHtml(calculateRemainingUsefulLife(item.purchaseDate, item.usefulLife))} remaining)</p>
   `;
 
   const canManageAssets =

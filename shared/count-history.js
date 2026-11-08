@@ -47,7 +47,7 @@ async function fetchCountHistoryRows() {
     alert('Could not load count history from the database:\n\n' + error.message);
     return [];
   }
-  return data;
+  return data || [];
 }
 
 async function openCountHistoryModal() {
@@ -85,17 +85,19 @@ async function renderCountHistoryList() {
     const mismatchClass = record.mismatch_count > 0 ? 'variance-mismatch' : 'variance-zero';
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${record.count_date}</td>
-      <td>${record.scope_category}</td>
-      <td>${record.scope_branch}</td>
-      <td style="font-size:12px;">${record.counted_by || '---'}</td>
-      <td>${record.item_count}</td>
-      <td class="${mismatchClass}">${record.mismatch_count}</td>
-      <td style="font-size:12px;">${savedAtDisplay}</td>
+      <td>${escapeHtml(record.count_date)}</td>
+      <td>${escapeHtml(record.scope_category)}</td>
+      <td>${escapeHtml(record.scope_branch)}</td>
+      <td style="font-size:12px;">${escapeHtml(record.counted_by || '---')}</td>
+      <td>${escapeHtml(record.item_count)}</td>
+      <td class="${mismatchClass}">${escapeHtml(record.mismatch_count)}</td>
+      <td style="font-size:12px;">${escapeHtml(savedAtDisplay)}</td>
       <td>
-        <button onclick="viewCountHistoryDetail(${record.id})" class="btn-table btn-edit-rem">👁️ View</button>
+        <button data-history-id="${Number(record.id)}" class="btn-table btn-edit-rem">👁️ View</button>
       </td>
     `;
+    const viewBtn = tr.querySelector('button[data-history-id]');
+    if (viewBtn) viewBtn.addEventListener('click', () => viewCountHistoryDetail(Number(viewBtn.dataset.historyId)));
     tbody.appendChild(tr);
   });
 }
@@ -116,16 +118,16 @@ function viewCountHistoryDetail(historyId) {
     const varianceText = row.variance > 0 ? `+${row.variance}` : `${row.variance}`;
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td style="font-family:monospace;">${row.id}</td>
-      <td>${row.name}</td>
-      <td>${row.brand || '---'}</td>
-      <td>${row.category}</td>
-      <td>${row.branch || 'NAGA'}</td>
-      <td>${row.issuedTo || '---'}</td>
-      <td>${row.systemQty}</td>
-      <td>${row.countedQty}</td>
-      <td class="${varianceClass}">${varianceText}</td>
-      <td>${row.remarks || '---'}</td>
+      <td style="font-family:monospace;">${escapeHtml(row.id)}</td>
+      <td>${escapeHtml(row.name)}</td>
+      <td>${escapeHtml(row.brand || '---')}</td>
+      <td>${escapeHtml(row.category)}</td>
+      <td>${escapeHtml(row.branch || 'NAGA')}</td>
+      <td>${escapeHtml(row.issuedTo || '---')}</td>
+      <td>${escapeHtml(row.systemQty)}</td>
+      <td>${escapeHtml(row.countedQty)}</td>
+      <td class="${varianceClass}">${escapeHtml(varianceText)}</td>
+      <td>${escapeHtml(row.remarks || '---')}</td>
     `;
     tbody.appendChild(tr);
   });
