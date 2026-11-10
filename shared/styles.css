@@ -411,13 +411,22 @@ body.sidebar-collapsed .sidebar-toggle-btn { display: block; }
 .table-scroll-wrapper::-webkit-scrollbar:vertical { width: 10px; }
 .table-scroll-wrapper::-webkit-scrollbar-thumb { background: #dbe0ee; border-radius: 6px; }
 .table-scroll-wrapper::-webkit-scrollbar-track { background: transparent; }
-.table-card { background: #fff; min-width: 3330px; }
+.table-card { background: #fff; min-width: 3650px; }
 table { width: 100%; border-collapse: separate; border-spacing: 0; text-align: left; font-size: 13px; table-layout: fixed; }
 
 thead { position: sticky; top: 0; z-index: 20; color: #fff; }
 th, td { padding: 13px 14px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); overflow-wrap: break-word; word-break: break-word; }
 th:last-child, td:last-child { border-right: none; }
 tr:hover td { background: #f8f9fd; }
+
+/* ---- Compact rows (more rows visible without scrolling) ---- */
+.table-card th, .table-card td { padding: 5px 8px; }
+.table-card td { font-size: 12px; line-height: 1.3; }
+.table-card .header-category-row th { padding: 6px 8px; }
+.table-card .header-main-row th { padding: 7px 8px; }
+.table-card .status-pill { padding: 2px 9px; font-size: 10px; }
+.table-card .btn-table { padding: 3px 7px; }
+
 
 .header-category-row th { font-size: 10px; font-weight: 800; text-align: center; padding: 8px; letter-spacing: 0.4px; }
 .cat-blue { background-color: var(--ink); }
@@ -519,6 +528,10 @@ tr:hover td { background: #f8f9fd; }
   display: none;
 }
 
+/* Issuance Report */
+.issuance-block { margin-bottom: 14px; }
+.issuance-sign { font-size: 12px; color: #334155; margin: 6px 0 0; }
+
 /* Monthly Report tables (on-screen preview; print version is compacted below) */
 .report-head h2 { font-size: 16px; margin: 0 0 4px; color: var(--ink); }
 .report-head p { font-size: 12px; color: #64748b; margin: 0 0 12px; }
@@ -530,6 +543,7 @@ tr:hover td { background: #f8f9fd; }
 .report-summary th { text-align: center; }
 
 @page { margin: 8mm; }
+@page assetlist { size: A4 portrait; margin: 8mm; }
 
 @media print {
   .no-print {
@@ -588,6 +602,73 @@ tr:hover td { background: #f8f9fd; }
     display: block !important;
   }
 
+
+  .top-header { display: none !important; }
+
+  /* ---- PRINT LIST (Print List button): compact font, portrait ----
+     The font size comes from the Print List dialog (--pl-font). Columns that
+     were not selected are hidden by print-list.js. Image and Actions are
+     never printed. */
+  body { page: assetlist; }
+  body.print-mode-count, body.print-mode-report { page: auto; }
+  .print-only-title { margin-bottom: 4px; }
+  .print-only-title h2 { font-size: 10px; margin-bottom: 1px; }
+  .print-only-title p { font-size: 7px; }
+  .data-container table { table-layout: fixed; width: 100%; font-size: var(--pl-font, 6.5px); }
+  .pl-hide { display: none !important; }
+  .data-container colgroup col:nth-child(1) { width: 5.80% !important; }
+  .data-container colgroup col:nth-child(2) { width: 5.70% !important; }
+  .data-container colgroup col:nth-child(3) { width: 3.67% !important; }
+  .data-container colgroup col:nth-child(4) { width: 6.65% !important; }
+  .data-container colgroup col:nth-child(5) { width: 3.27% !important; }
+  .data-container colgroup col:nth-child(6) { width: 4.49% !important; }
+  .data-container colgroup col:nth-child(7) { width: 4.08% !important; }
+  .data-container colgroup col:nth-child(9) { width: 4.90% !important; }
+  .data-container colgroup col:nth-child(10) { width: 3.27% !important; }
+  .data-container colgroup col:nth-child(11) { width: 5.31% !important; }
+  .data-container colgroup col:nth-child(12) { width: 4.90% !important; }
+  .data-container colgroup col:nth-child(13) { width: 4.08% !important; }
+  .data-container colgroup col:nth-child(14) { width: 2.45% !important; }
+  .data-container colgroup col:nth-child(15) { width: 3.67% !important; }
+  .data-container colgroup col:nth-child(16) { width: 3.65% !important; }
+  .data-container colgroup col:nth-child(17) { width: 3.67% !important; }
+  .data-container colgroup col:nth-child(18) { width: 3.30% !important; }
+  .data-container colgroup col:nth-child(19) { width: 3.27% !important; }
+  .data-container colgroup col:nth-child(20) { width: 4.90% !important; }
+  .data-container colgroup col:nth-child(21) { width: 5.30% !important; }
+  .data-container colgroup col:nth-child(22) { width: 3.00% !important; }
+  .data-container colgroup col:nth-child(23) { width: 3.00% !important; }
+  .data-container colgroup col:nth-child(24) { width: 4.00% !important; }
+  .data-container colgroup col:nth-child(25) { width: 3.67% !important; }
+  .data-container colgroup col:nth-child(8),
+  .data-container colgroup col:nth-child(26) { width: 0 !important; }
+  .data-container .header-main-row th:nth-child(8),
+  .data-container #tableBody tr:not(.group-header-row) td:nth-child(8),
+  .data-container #tableBody tr:not(.group-header-row) td:nth-child(26),
+  .data-container .header-category-row th:last-child {
+    padding: 0 !important; border: 0 !important; font-size: 0 !important;
+    overflow: hidden; width: 0; max-width: 0;
+  }
+  .data-container #tableBody td:nth-child(8) img,
+  .data-container #tableBody td:nth-child(26) button { display: none !important; }
+  .data-container table th,
+  .data-container table td {
+    padding: 1px 2px; font-size: var(--pl-font, 6.5px) !important; line-height: 1.1;
+    border-color: #94a3b8; overflow-wrap: anywhere; word-break: break-word;
+  }
+  .data-container #tableBody td * { font-size: inherit !important; }
+  .data-container .header-category-row th { font-size: var(--pl-font, 6.5px); padding: 2px; }
+  .data-container .header-main-row th { font-size: calc(var(--pl-font, 6.5px) - 1px); padding: 1px 2px; letter-spacing: 0; }
+  .data-container .status-pill {
+    padding: 0; border-radius: 0; background: none !important; color: #0f172a !important;
+    font-size: var(--pl-font, 6.5px); font-weight: 700; display: inline;
+  }
+  .data-container #tableBody td { font-weight: 400; }
+  .data-container #tableBody td:first-child { font-size: var(--pl-font, 6.5px); }
+  .data-container thead { display: table-header-group; }
+  .data-container tr { break-inside: avoid; page-break-inside: avoid; }
+  .data-container tr.group-header-row td { font-size: calc(var(--pl-font, 6.5px) + 0.5px); padding: 2px; }
+
   /* ---- MONTHLY REPORT print mode ---- */
   body.print-mode-report .print-only-title,
   body.print-mode-report .print-only-count,
@@ -624,11 +705,13 @@ tr:hover td { background: #f8f9fd; }
   .print-only-report .report-summary th { text-align: center; }
   .print-only-report .report-table thead { display: table-header-group; }
   .print-only-report .report-table tr { break-inside: avoid; page-break-inside: avoid; }
+  .print-only-report .issuance-block { break-inside: avoid; page-break-inside: avoid; margin-bottom: 8px; }
+  .print-only-report .issuance-sign { font-size: 7px; margin: 3px 0 0; }
 
-  /* ---- COMPACT COUNT SHEET (para makatipid sa papel) ----
-     Para mas malaki o mas maliit: palitan lang ang font-size at padding
-     sa .count-sheet-table sa ibaba. Halimbawa 6px = mas maraming row bawat
-     pahina, 8px = mas madaling basahin. */
+  /* ---- COMPACT COUNT SHEET (saves paper) ----
+     For larger or smaller text, change only the font-size and padding
+     of .count-sheet-table below. For example 6px = more rows per
+     page, 8px = easier to read. */
   .print-only-count h2 { font-size: 10px; margin: 0 0 1px; }
   .print-only-count p { font-size: 7px; color: #475569; margin: 0 0 4px; }
 
@@ -639,7 +722,7 @@ tr:hover td { background: #f8f9fd; }
     font-size: 7px;
     line-height: 1.15;
   }
-  /* Lapad ng bawat column (kabuuan = 100%). Ang ID ay hindi na puputulin. */
+  /* Width of each column (total = 100%). The ID is never cut off. */
   .count-sheet-table th:nth-child(1) { width: 13%; }  /* INNOV-ID */
   .count-sheet-table th:nth-child(2) { width: 20%; }  /* NAME */
   .count-sheet-table th:nth-child(3) { width: 8%; }   /* BRAND */
@@ -665,7 +748,7 @@ tr:hover td { background: #f8f9fd; }
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
-  /* Uulitin ang header sa bawat pahina; hindi mahahati ang isang row */
+  /* Repeat the header on every page; a row is never split across pages */
   .count-sheet-table thead { display: table-header-group; }
   .count-sheet-table tr { page-break-inside: avoid; break-inside: avoid; }
   .count-sheet-table .group-header-row td {

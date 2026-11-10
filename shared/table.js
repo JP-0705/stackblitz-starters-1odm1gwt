@@ -118,6 +118,7 @@ async function searchAssets() {
       (item.name || '').toLowerCase().includes(searchInput) ||
       (item.brand || '').toLowerCase().includes(searchInput) ||
       (item.issuedTo || '').toLowerCase().includes(searchInput) ||
+      (item.department || '').toLowerCase().includes(searchInput) ||
       (item.model || '').toLowerCase().includes(searchInput) ||
       (item.itemCategory || '').toLowerCase().includes(searchInput) ||
       (item.serialNumber || '').toLowerCase().includes(searchInput);
@@ -131,6 +132,13 @@ async function searchAssets() {
   renderTableRows(filtered, groupByIssuedTo);
 }
 
+// Small "no image" icon (a picture frame with a slash) shown instead of text.
+const NO_IMAGE_ICON_HTML =
+  '<span class="no-image-icon" title="No image" aria-label="No image" style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; color:#94a3b8;">' +
+  '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+  '<rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="1.6"></circle>' +
+  '<path d="M21 16l-5-5-8 8"></path><path d="M3 3l18 18"></path></svg></span>';
+
 function renderTableRows(dataRows, groupByIssuedTo = false) {
   const tbody = document.getElementById('tableBody');
   if (!tbody) return;
@@ -138,7 +146,7 @@ function renderTableRows(dataRows, groupByIssuedTo = false) {
   let lastIssuedTo = null;
   window.lastRenderedAssetRows = dataRows;
 
-  const TOTAL_TABLE_COLUMNS = 24;
+  const TOTAL_TABLE_COLUMNS = 26;
   const e = escapeHtml;
 
   dataRows.forEach((item) => {
@@ -211,12 +219,21 @@ function renderTableRows(dataRows, groupByIssuedTo = false) {
 
     const safeImg = safeUrl(item.imageUrl);
     const imageCell = safeImg
-      ? `<img class="asset-thumb" data-url="${e(safeImg)}" data-name="${e(item.name || 'Asset')}" src="${e(safeImg)}" alt="${e(item.name || 'asset')}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; cursor:pointer;" />`
-      : '<span style="color:#94a3b8; font-size:11px;">No Image</span>';
+      ? `<img class="asset-thumb" data-url="${e(safeImg)}" data-name="${e(item.name || 'Asset')}" src="${e(safeImg)}" alt="" style="width:28px; height:28px; object-fit:cover; border-radius:6px; cursor:pointer;" />`
+      : NO_IMAGE_ICON_HTML;
 
     const remainingLife = calculateRemainingUsefulLife(item.purchaseDate, item.usefulLife);
     const remainingLifeStyle =
       remainingLife === 'EXPIRED' ? 'color:#dc2626; font-weight:700;' : '';
+
+    // Warranty: show the expiry date; red when it has already passed.
+    let warrantyText = '---';
+    let warrantyStyle = '';
+    if (item.warrantyExpiration) {
+      const expired = item.warrantyExpiration < todayLocalISO();
+      warrantyText = item.warrantyExpiration + (expired ? ' (EXPIRED)' : '');
+      if (expired) warrantyStyle = 'color:#dc2626; font-weight:700;';
+    }
 
     row.innerHTML = `
       <td style="font-family:monospace; font-weight:700; color:#0f172a;">${e(item.id)}</td>
@@ -230,6 +247,7 @@ function renderTableRows(dataRows, groupByIssuedTo = false) {
       <td style="color:#64748b; font-size:11px;">${e(item.category || '---')}</td>
       <td>${e(item.branch || 'NAGA')}</td>
       <td>${e(item.issuedTo || '---')}</td>
+      <td>${e(item.department || '---')}</td>
       <td>${e(item.purchaseDate || '---')}</td>
       <td>${e(item.unit || 'PIECE')}</td>
       <td>₱ ${Number(item.unitPrice || 0).toLocaleString()}</td>
@@ -237,6 +255,7 @@ function renderTableRows(dataRows, groupByIssuedTo = false) {
       <td style="font-weight:600;">₱ ${Number(item.amount || 0).toLocaleString()}</td>
       <td style="${remainingLifeStyle}">${e(remainingLife)}</td>
       <td>${e(calculateAssetAge(item.purchaseDate))}</td>
+      <td style="${warrantyStyle}">${e(warrantyText)}</td>
       <td><span class="status-pill ${conditionClass}">${e(item.condition || 'IN CONDITION')}</span></td>
       <td><span class="status-pill ${noteClass}">${e(item.note || 'ACTIVE')}</span></td>
       <td><span class="status-pill ${statusClass}">${e(item.status || 'IN USE')}</span></td>
@@ -257,6 +276,13 @@ function renderTableRows(dataRows, groupByIssuedTo = false) {
     });
     const thumb = row.querySelector('img.asset-thumb');
     if (thumb) {
+      // If the picture cannot be loaded (dead link, no permission), show the
+      // "no image" icon instead of broken-image text.
+      const showNoImageIcon = () => {
+        if (thumb.parentNode) thumb.outerHTML = NO_IMAGE_ICON_HTML;
+      };
+      thumb.addEventListener('error', showNoImageIcon);
+      if (thumb.complete && thumb.naturalWidth === 0) showNoImageIcon();
       thumb.addEventListener('click', (ev) => {
         ev.stopPropagation();
         showAssetImagePreview(thumb.dataset.url, thumb.dataset.name);
@@ -289,6 +315,10 @@ function openRowDetailModal(assetId) {
   currentRowDetailAssetId = assetId;
 
   const e = escapeHtml;
+  // Supplier contact details are personal/business data: Admin + Accounting only.
+  const canSeeSupplier =
+    activeUserSession &&
+    (activeUserSession.role === 'ADMIN' || activeUserSession.role === 'ACCOUNTING');
   const body = document.getElementById('rowDetailBody');
   body.innerHTML = `
     <p style="margin:5px 0;"><strong>Date:</strong> ${e(item.purchaseDate || '---')}</p>
@@ -302,6 +332,19 @@ function openRowDetailModal(assetId) {
     <p style="margin:5px 0;"><strong>Quantity:</strong> ${e(item.qty || 1)}</p>
     <p style="margin:5px 0;"><strong>Price:</strong> ₱ ${Number(item.unitPrice || 0).toLocaleString()}</p>
     <p style="margin:5px 0;"><strong>Useful Life:</strong> ${e(item.usefulLife || '---')} (${escapeHtml(calculateRemainingUsefulLife(item.purchaseDate, item.usefulLife))} remaining)</p>
+    <p style="margin:5px 0;"><strong>Department:</strong> ${e(item.department || '---')}</p>
+    <p style="margin:5px 0;"><strong>Warranty:</strong> ${
+      item.warrantyMonths === null || item.warrantyMonths === undefined
+        ? '---'
+        : e(item.warrantyMonths + ' month(s) — until ' + (item.warrantyExpiration || 'n/a'))
+    }</p>
+    ${
+      canSeeSupplier
+        ? `<p style="margin:5px 0;"><strong>Supplier:</strong> ${e(item.supplier || '---')}</p>
+    <p style="margin:5px 0;"><strong>Supplier Contact:</strong> ${e(item.supplierContact || '---')}</p>
+    <p style="margin:5px 0;"><strong>Supplier Address:</strong> ${e(item.supplierAddress || '---')}</p>`
+        : ''
+    }
   `;
 
   const canManageAssets =

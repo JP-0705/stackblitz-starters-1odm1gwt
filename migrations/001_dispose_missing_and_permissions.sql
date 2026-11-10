@@ -131,5 +131,5 @@ grant execute on function public.update_asset_remarks(text, text) to authenticat
 --  where table_schema='public' and table_name='assets'
 --    and column_name in ('is_missing','disposal_reason','disposal_date','disposal_remarks');
 
--- Itala na naipatakbo na ito
+-- Record that this migration has run
 insert into public.schema_migrations(name) values ('001_dispose_missing_and_permissions') on conflict do nothing;

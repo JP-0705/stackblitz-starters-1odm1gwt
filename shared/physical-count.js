@@ -47,7 +47,8 @@ async function printBlankCountSheet() {
   const branchLabelText =
     currentBranchFilter === 'ALL' ? 'All Branches' : `${currentBranchFilter} Branch`;
   document.getElementById('countSheetMeta').innerText =
-    `Branch: ${branchLabelText} — Blank Count Sheet (fill in by hand) — Printed: ${new Date().toLocaleString()}`;
+    `Branch: ${branchLabelText} — Blank Count Sheet (fill in by hand) — Printed: ${new Date().toLocaleString()} — ` +
+    `Counted by: ______________________ — Witnessed by: ______________________`;
 
   const tbody = document.getElementById('countSheetTableBody');
   tbody.innerHTML = buildCountSheetRowsHtml(
@@ -86,6 +87,8 @@ async function openPhysicalCountModal() {
   }
 
   document.getElementById('countEntryDate').value = todayLocalISO();
+  const witnessEl = document.getElementById('countEntryWitness');
+  if (witnessEl) witnessEl.value = '';
   const scopeCategoryText =
     currentCategoryFilter === 'ALL' ? 'All Categories' : currentCategoryFilter;
   const scopeBranchText =
@@ -195,6 +198,8 @@ async function saveAndPrintCount() {
 
   const countDate = document.getElementById('countEntryDate').value;
   if (!countDate) return alert('Please choose a count date.');
+  const witnessEl = document.getElementById('countEntryWitness');
+  const witnessedBy = witnessEl ? witnessEl.value.trim().toUpperCase() : '';
 
   const inputs = document.querySelectorAll('.countedQtyInput');
   const countRecords = [];
@@ -259,20 +264,21 @@ async function saveAndPrintCount() {
   // The live "asset_counts" row above can still be re-saved for the same
   // date, but this snapshot is a permanent, locked record — it is only
   // ever inserted, never updated, so it becomes this count's History entry.
-  await insertCountHistoryRecord(countDate, sheetRows);
+  await insertCountHistoryRecord(countDate, sheetRows, witnessedBy);
 
-  renderCountSheetPrintArea(countDate, sheetRows, groupByIssuedTo);
+  renderCountSheetPrintArea(countDate, sheetRows, groupByIssuedTo, witnessedBy);
   closeCountEntryModal();
 
   document.body.classList.add('print-mode-count');
   window.print();
 }
 
-function renderCountSheetPrintArea(countDate, sheetRows, groupByIssuedTo = false) {
+function renderCountSheetPrintArea(countDate, sheetRows, groupByIssuedTo = false, witnessedBy = '') {
   const branchLabelText =
     currentBranchFilter === 'ALL' ? 'All Branches' : `${currentBranchFilter} Branch`;
   document.getElementById('countSheetMeta').innerText =
-    `Branch: ${branchLabelText} — Count Date: ${countDate} — Printed: ${new Date().toLocaleString()}`;
+    `Branch: ${branchLabelText} — Count Date: ${countDate} — Printed: ${new Date().toLocaleString()}` +
+    (witnessedBy ? ` — Witnessed by: ${witnessedBy}` : '');
 
   const rowsForPrint = groupByIssuedTo
     ? [...sheetRows].sort((a, b) => (a.issuedTo || '').localeCompare(b.issuedTo || ''))

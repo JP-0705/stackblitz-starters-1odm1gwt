@@ -116,6 +116,50 @@ document.addEventListener('DOMContentLoaded', () => {
   if (branchEl) branchEl.addEventListener('change', suggestNextAssetId);
 });
 
+// Warranty expiration = Date of Purchase + Warranty months. Shown (read-only)
+// in the form and saved with the asset. Blank when either value is missing.
+function computeWarrantyExpiration(purchaseDate, months) {
+  const m = parseInt(months, 10);
+  if (!purchaseDate || isNaN(m) || m < 0) return '';
+  const d = new Date(purchaseDate + 'T00:00:00');
+  if (isNaN(d.getTime())) return '';
+  const day = d.getDate();
+  d.setMonth(d.getMonth() + m);
+  if (d.getDate() !== day) d.setDate(0); // e.g. Jan 31 + 1 month -> last day of Feb
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+// Auto-fills the expiration when BOTH purchase date and months are filled in.
+// If either is missing, the field is left alone, so an expiration date that came
+// from the old Excel file is never wiped just because the purchase date is blank.
+function updateWarrantyExpirationDisplay() {
+  const el = document.getElementById('formAssetWarrantyExpiration');
+  if (!el) return;
+  const computed = computeWarrantyExpiration(
+    document.getElementById('formAssetPurchaseDate').value,
+    document.getElementById('formAssetWarrantyMonths').value
+  );
+  if (computed) el.value = computed;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const pd = document.getElementById('formAssetPurchaseDate');
+  if (pd) pd.addEventListener('change', updateWarrantyExpirationDisplay);
+});
+
+// If an older record has a department that is not in the dropdown, add it so
+// it is not silently erased when the asset is saved.
+function ensureDepartmentOption(value) {
+  const sel = document.getElementById('formAssetDepartment');
+  if (!sel || !value) return;
+  if (![...sel.options].some((o) => o.value === value)) {
+    const opt = document.createElement('option');
+    opt.value = value;
+    opt.textContent = value;
+    sel.appendChild(opt);
+  }
+}
+
 function openAssetInsertModal() {
   originalAssetImageUrl = '';
   originalAssetSnapshot = null;
@@ -143,6 +187,12 @@ function openAssetInsertModal() {
   document.getElementById('formAssetUnitPrice').value = 0;
   document.getElementById('formAssetQuantity').value = 1;
   document.getElementById('formAssetUsefulLife').value = '';
+  document.getElementById('formAssetDepartment').value = '';
+  document.getElementById('formAssetSupplier').value = '';
+  document.getElementById('formAssetSupplierContact').value = '';
+  document.getElementById('formAssetSupplierAddress').value = '';
+  document.getElementById('formAssetWarrantyMonths').value = '';
+  document.getElementById('formAssetWarrantyExpiration').value = '';
   document.getElementById('formAssetCondition').value = 'IN CONDITION';
   document.getElementById('formAssetNote').value = 'ACTIVE';
   document.getElementById('formAssetStatus').value = 'IN USE';
@@ -199,6 +249,14 @@ async function openAssetEditModal(assetId) {
   document.getElementById('formAssetUnitPrice').value = item.unitPrice || 0;
   document.getElementById('formAssetQuantity').value = item.qty || 1;
   document.getElementById('formAssetUsefulLife').value = item.usefulLife || '';
+  ensureDepartmentOption(item.department);
+  document.getElementById('formAssetDepartment').value = item.department || '';
+  document.getElementById('formAssetSupplier').value = item.supplier || '';
+  document.getElementById('formAssetSupplierContact').value = item.supplierContact || '';
+  document.getElementById('formAssetSupplierAddress').value = item.supplierAddress || '';
+  document.getElementById('formAssetWarrantyMonths').value =
+    item.warrantyMonths === null || item.warrantyMonths === undefined ? '' : item.warrantyMonths;
+  document.getElementById('formAssetWarrantyExpiration').value = item.warrantyExpiration || '';
   document.getElementById('formAssetCondition').value = item.condition || 'IN CONDITION';
   document.getElementById('formAssetNote').value = item.note || 'ACTIVE';
   document.getElementById('formAssetStatus').value = item.status || 'IN USE';
@@ -268,6 +326,12 @@ async function commitAssetStorageChange() {
     imageUrl = publicUrlData.publicUrl;
   }
 
+  const warrantyRaw = document.getElementById('formAssetWarrantyMonths').value.trim();
+  if (warrantyRaw !== '' && (!/^\d+$/.test(warrantyRaw) || Number(warrantyRaw) > 600)) {
+    return alert('Warranty must be a whole number of months (0 to 600), or leave it blank.');
+  }
+  const warrantyMonthsValue = warrantyRaw === '' ? null : Number(warrantyRaw);
+
   const commonFields = {
     name: document.getElementById('formAssetName').value.toUpperCase(),
     brand: document.getElementById('formAssetBrand').value.toUpperCase(),
@@ -284,6 +348,12 @@ async function commitAssetStorageChange() {
     qty: qty,
     amount: price * qty,
     usefulLife: document.getElementById('formAssetUsefulLife').value.toUpperCase(),
+    department: document.getElementById('formAssetDepartment').value,
+    supplier: document.getElementById('formAssetSupplier').value.toUpperCase(),
+    supplierContact: document.getElementById('formAssetSupplierContact').value.trim(),
+    supplierAddress: document.getElementById('formAssetSupplierAddress').value.toUpperCase(),
+    warrantyMonths: warrantyMonthsValue,
+    warrantyExpiration: document.getElementById('formAssetWarrantyExpiration').value || '',
     condition: document.getElementById('formAssetCondition').value,
     note: document.getElementById('formAssetNote').value,
     status: document.getElementById('formAssetStatus').value,

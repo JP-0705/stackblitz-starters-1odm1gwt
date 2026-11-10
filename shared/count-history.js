@@ -5,7 +5,7 @@
 // saved it is locked forever and only shows up here, read-only.
 let currentCountHistoryRows = [];
 
-async function insertCountHistoryRecord(countDate, sheetRows) {
+async function insertCountHistoryRecord(countDate, sheetRows, witnessedBy = '') {
   if (!supabaseClient) return;
 
   const mismatchCount = sheetRows.filter((r) => r.variance !== 0).length;
@@ -15,6 +15,7 @@ async function insertCountHistoryRecord(countDate, sheetRows) {
     scope_category: currentCategoryFilter === 'ALL' ? 'ALL CATEGORIES' : currentCategoryFilter,
     scope_branch: currentBranchFilter === 'ALL' ? 'ALL BRANCHES' : currentBranchFilter,
     counted_by: activeUserSession ? activeUserSession.email : null,
+    witnessed_by: witnessedBy || null,
     item_count: sheetRows.length,
     mismatch_count: mismatchCount,
     rows: sheetRows,
@@ -108,7 +109,7 @@ function viewCountHistoryDetail(historyId) {
 
   document.getElementById('countHistoryDetailMeta').innerText =
     `Branch: ${record.scope_branch} — Scope: ${record.scope_category} — ` +
-    `Count Date: ${record.count_date} — Counted By: ${record.counted_by || '---'} — ` +
+    `Count Date: ${record.count_date} — Counted By: ${record.counted_by || '---'} — Witnessed By: ${record.witnessed_by || '---'} — ` +
     `Saved: ${new Date(record.created_at).toLocaleString()} — This record is locked and cannot be edited.`;
 
   const tbody = document.getElementById('countHistoryDetailTableBody');

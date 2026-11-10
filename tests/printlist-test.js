@@ -1,0 +1,44 @@
+// Usage: node printlist-test.js <project-dir> [pdf-prefix]
+const { chromium } = require('playwright'); const http=require('http'),fs=require('fs'),path=require('path');
+const DIR=process.argv[2], OUT=process.argv[3]; const FAKE=fs.readFileSync(__dirname+'/e2e-report.js','utf8').match(/const FAKE_SUPABASE = `([\s\S]*?)`;/)[1];
+const server=http.createServer((q,r)=>{let p=q.url.split('?')[0]; if(p.endsWith('/'))p+='index.html'; const f=path.join(DIR,p); if(!fs.existsSync(f)){r.writeHead(404);return r.end();} r.writeHead(200,{'Content-Type':{'.html':'text/html','.js':'text/javascript','.css':'text/css'}[path.extname(f)]||'x'}); r.end(fs.readFileSync(f));});
+let ok=0,bad=0; const check=(n,c,x='')=>{(c?ok++:bad++); console.log((c?'  ✅ ':'  ❌ ')+n+(x?'  → '+x:''));};
+(async()=>{await new Promise(r=>server.listen(0,r)); const base='http://localhost:'+server.address().port; const b=await chromium.launch(); const ctx=await b.newContext({viewport:{width:1500,height:950},timezoneId:'Asia/Manila'}); const page=await ctx.newPage();
+page.on('pageerror',e=>console.log('PAGE ERROR',e.message));
+await page.route('**/cdn.jsdelivr.net/**',r=>r.fulfill({contentType:'text/javascript',body:r.request().url().includes('supabase')?FAKE:'window.Chart=function(){};'}));
+const names=['JUAN DELA CRUZ','MARIA SANTOS','PEDRO REYES','WORKSTATION','BIG TRAINING ROOM'];
+const assets=[]; for(let i=1;i<=800;i++) assets.push({id:'IPHLNAGA-'+String(i).padStart(5,'0'),name:'ITEM '+i+' WIRELESS KEYBOARD',brand:'LOGITECH',description:'BLACK WIRELESS KEYBOARD AND MOUSE COMBO',model:'MK'+i,serial_number:'SN'+i*77,item_category:'KEYBOARD',category:'IT EQUIPMENT',branch:i%9?'NAGA':'MAKATI',qty:1,unit:'PIECE',unit_price:1500,amount:1500,is_deleted:false,issued_to:names[i%5],department:'MIS',condition:'IN CONDITION',note:'ACTIVE',status:'IN USE',purchase_date:'2024-05-01',useful_life:'3 YEARS',remarks:i%7?'':'FOR REPAIR'});
+await page.addInitScript(([db,s])=>{window.__DB=db;window.print=()=>{window.__state=(()=>{const t=document.querySelector('.data-container table'); const vis=[...t.querySelectorAll('thead tr.header-main-row th')].filter(x=>!x.classList.contains('pl-hide')).map(x=>x.textContent.trim()); const rowCells=[...t.querySelector('#tableBody tr:not(.group-header-row)').children].filter(x=>!x.classList.contains('pl-hide')).length; const cats=[...t.querySelectorAll('thead tr.header-category-row th')].map(x=>x.classList.contains('pl-hide')?'-':x.textContent.trim().slice(0,6)+':'+x.colSpan); return {vis,rowCells,cats,font:document.body.style.getPropertyValue('--pl-font'),group:[...t.querySelectorAll('#tableBody tr.group-header-row td')].map(x=>x.colSpan)};})();};sessionStorage.setItem('ACTIVE_SESSION',JSON.stringify(s));},[{assets,asset_edit_history:[],asset_counts:[],count_history:[]},{email:'a@x.com',role:'ADMIN'}]);
+await page.goto(base+'/dashboard/'); await page.waitForSelector('#tableBody tr'); await page.waitForTimeout(400);
+await page.click('button:has-text("Print List")'); await page.waitForSelector('#printListModal',{state:'visible'});
+const def=await page.$$eval('#plColumns input:checked',c=>c.length);
+check('dialog: 13 "important" columns are checked by default', def===13, String(def));
+check('default font: Medium', (await page.inputValue('#plSize'))==='MEDIUM');
+await page.click('#plPrint'); await page.waitForTimeout(300);
+let st=await page.evaluate(()=>window.__state);
+check('only 13 columns appear in print', st.vis.length===13 && st.rowCells===13, st.vis.join('|'));
+check('no Description/Image/Actions in print', !st.vis.includes('DESCRIPTION') && !st.vis.includes('IMAGE'));
+check('font: 8px', st.font==='8px', st.font);
+check('group heading colspans are updated', st.cats.join(',').includes('ASSET '), st.cats.join(','));
+if(OUT){ await page.emulateMedia({media:'print'}); await page.evaluate(()=>window.dispatchEvent(new Event('beforeprint'))); await page.pdf({path:OUT+'.pdf',format:'A4',preferCSSPageSize:true,printBackground:true}); await page.emulateMedia({media:'screen'}); }
+await page.evaluate(()=>window.dispatchEvent(new Event('afterprint')));
+const after=await page.evaluate(()=>({hidden:document.querySelectorAll('.pl-hide').length,font:document.body.style.getPropertyValue('--pl-font'),cells:[...document.querySelector('#tableBody tr').children].length,spans:[...document.querySelectorAll('thead tr.header-category-row th')].map(x=>x.colSpan).join(',')}));
+check('after printing everything is back in the table (nothing hidden)', after.hidden===0 && after.font==='' && after.cells===26 && after.spans==='8,4,8,5,1', JSON.stringify(after));
+// different choice + group by Issued To + Large font
+await page.click('button:has-text("Print List")'); await page.click('#plNone'); await page.check('#plColumns input[data-col="1"]'); await page.check('#plColumns input[data-col="2"]'); await page.selectOption('#plSize','LARGE');
+await page.click('#plPrint'); await page.waitForTimeout(300);
+st=await page.evaluate(()=>window.__state);
+check('only 2 columns when 2 are chosen; font 9.5px', st.vis.length===2 && st.font==='9.5px', st.vis.join('|')+' '+st.font);
+await page.evaluate(()=>window.dispatchEvent(new Event('afterprint')));
+await page.click('button:has-text("Print List")');
+check('remembers the last choice (2 columns, Large)', (await page.$$eval('#plColumns input:checked',c=>c.length))===2 && (await page.inputValue('#plSize'))==='LARGE');
+await page.click('#plNone'); await page.click('#plPrint');
+check('no column chosen → warning shown, nothing printed', (await page.evaluate(()=>window.__state.vis.length))===2);
+await page.click('#plCancel');
+await page.check('#groupByIssuedToCheckbox'); await page.waitForTimeout(300);
+await page.click('button:has-text("Print List")'); await page.click('#plImportant'); await page.click('#plPrint'); await page.waitForTimeout(300);
+st=await page.evaluate(()=>window.__state);
+check('Group by Issued To: group row colspan is correct (13)', st.group.length>0 && st.group.every(x=>x===13), JSON.stringify(st.group.slice(0,3)));
+await page.evaluate(()=>window.dispatchEvent(new Event('afterprint')));
+check('group row colspan restored', (await page.$eval('#tableBody tr.group-header-row td',x=>x.colSpan))===26);
+console.log(`\n${ok}/${ok+bad} passed`); await b.close(); server.close(); process.exit(bad?1:0);})().catch(e=>{console.log('TEST ERROR:',e.message.split('\n').slice(0,3).join(' | ')); process.exit(2);});

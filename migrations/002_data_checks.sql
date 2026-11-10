@@ -1,21 +1,21 @@
--- 002: proteksyon sa mismong database (hindi lang sa browser).
--- "NOT VALID" = hindi sinusuri ang MGA LUMANG row, pero sinusuri ang bago at ang mga na-edit.
+-- 002: protections in the database itself (not only in the browser).
+-- "NOT VALID" = existing rows are not checked, but new and edited rows are.
 --
--- HAKBANG 1 — patakbuhin MUNA ang tatlong query na ito. Dapat WALANG lumabas na row.
---   Kung may lumabas, ayusin muna ang mga row na iyon, kung hindi ay hindi na
---   mae-edit ang mga ito pagkatapos ng migration na ito.
+-- STEP 1 — run these queries FIRST. They should return NO rows.
+--   If any row comes back, fix those rows first; otherwise they can no longer
+--   be edited after this migration.
 --
 --   select id from public.assets where id !~ '^IPHL[A-Z]*-[A-Z0-9-]+$';
 --   select id, qty, unit_price, amount from public.assets
 --    where qty < 0 or unit_price < 0 or amount < 0;
 --
--- HAKBANG 2 — saka patakbuhin ang bahaging ito:
+-- STEP 2 — then run the rest of this file:
 
 do $$
 begin
   if not exists (select 1 from pg_constraint where conname = 'assets_id_format') then
-    -- Tumatanggap ng IPHLNAGA-00001, IPHLMAKATI-00001 at ng luma mong IPHL-APP-001.
-    -- Bawal ang espasyo, maliit na letra at kakaibang simbolo.
+    -- Accepts IPHLNAGA-00001, IPHLMAKATI-00001 and the old IPHL-APP-001 style.
+    -- Spaces, lowercase letters and unusual symbols are not allowed.
     alter table public.assets
       add constraint assets_id_format check (id ~ '^IPHL[A-Z]*-[A-Z0-9-]+$') not valid;
   end if;

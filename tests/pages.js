@@ -3,13 +3,13 @@ const fs = require('fs');
 (async () => {
   const browser = await chromium.launch();
   const out = [];
-  for (const [label, dir] of [['LUMA', process.argv[2]], ['BAGO', process.argv[3]]]) {
+  for (const [label, dir] of [['OLD', process.argv[2]], ['NEW', process.argv[3]]]) {
     const css = fs.readFileSync(dir + '/shared/styles.css', 'utf8');
     const names = ['LAPTOP DELL LATITUDE 5420','OFFICE CHAIR ERGONOMIC','AIR CONDITIONER 1.5HP SPLIT TYPE','MONITOR 24 INCH','STEEL CABINET 4-DRAWER'];
     let rows = '';
     for (let i = 1; i <= 800; i++) {
       const n = names[i % names.length];
-      rows += `<tr><td>IPHLNAGA-${String(i).padStart(5,'0')}</td><td>${n}</td><td>DELL</td><td>IT EQUIPMENT</td><td>NAGA</td><td>JUAN DELA CRUZ</td><td>1</td><td style="min-width:${label==='LUMA'?70:50}px;">&nbsp;</td><td style="min-width:${label==='LUMA'?70:50}px;">&nbsp;</td><td style="min-width:${label==='LUMA'?90:80}px;">&nbsp;</td></tr>`;
+      rows += `<tr><td>IPHLNAGA-${String(i).padStart(5,'0')}</td><td>${n}</td><td>DELL</td><td>IT EQUIPMENT</td><td>NAGA</td><td>JUAN DELA CRUZ</td><td>1</td><td style="min-width:${label==='OLD'?70:50}px;">&nbsp;</td><td style="min-width:${label==='OLD'?70:50}px;">&nbsp;</td><td style="min-width:${label==='OLD'?90:80}px;">&nbsp;</td></tr>`;
     }
     const html = `<html><head><style>${css}</style></head><body class="print-mode-count">
       <div class="data-container">x</div>

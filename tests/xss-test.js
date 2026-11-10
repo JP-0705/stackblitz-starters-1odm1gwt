@@ -102,10 +102,10 @@ run(`
   const jsSrc = [...doc.querySelectorAll('img')].some((i) => /^javascript:/i.test(i.getAttribute('src') || ''));
   const idOk = w.__called.filter((c) => c[1] === evilId).length;
   const bad = w.__called.filter((c) => c[1] !== evilId && c[0] !== 'preview').length;
-  console.log('  injected <img onerror>/<script>/inline handlers :', injected, ' (harus 0)');
-  console.log('  naipatakbong code (window.__pwned)             :', w.__pwned, ' (harus 0)');
-  console.log('  <img src="javascript:..."> sa table             :', jsSrc, ' (harus false)');
-  console.log('  buttons na nakatanggap ng tamang ID             :', idOk, '/', w.__called.length - 0, ' mga tawag:', w.__called.map((c) => c[0]).join(','));
+  console.log('  injected <img onerror>/<script>/inline handlers :', injected, ' (must be 0)');
+  console.log('  injected code that ran (window.__pwned)        :', w.__pwned, ' (must be 0)');
+  console.log('  <img src="javascript:..."> in the table         :', jsSrc, ' (must be false)');
+  console.log('  buttons that received the correct ID            :', idOk, '/', w.__called.length - 0, ' calls:', w.__called.map((c) => c[0]).join(','));
   const nameCell = doc.querySelector('#tableBody tr:not(.group-header-row) td:nth-child(2)');
-  console.log('  lumalabas na text ng pangalan                   :', nameCell ? JSON.stringify(nameCell.textContent.slice(0, 40)) : 'WALA');
+  console.log('  name text shown in the cell                     :', nameCell ? JSON.stringify(nameCell.textContent.slice(0, 40)) : 'NONE');
 })().catch((e) => console.log('  TEST ERROR:', e.message.split('\n')[0]));

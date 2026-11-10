@@ -125,25 +125,25 @@ const FAKE_SUPABASE = `
   console.log('\n[1] ADMIN');
   let page = await newPage('ADMIN', 'admin@x.com');
   const total = await page.innerText('#totalCounter');
-  check('dashboard nagpakita ng LAHAT ng 1,200 asset (pagination)', total.trim() === '1200', 'totalCounter=' + total);
-  check('may "Monthly Report" sa Settings menu', (await page.locator('#monthlyReportMenuLink').count()) === 1);
+  check('dashboard shows ALL 1,200 assets (pagination)', total.trim() === '1200', 'totalCounter=' + total);
+  check('"Monthly Report" is in the Settings menu', (await page.locator('#monthlyReportMenuLink').count()) === 1);
 
   await runReport(page, 9, 2026); // October
   const status = await page.innerText('#mrStatus');
   const expectedTotal = 2 + 2 + 1 + 1 + 2 + 1 + 1 + 1 + 1005 - 0; // see below
   // 2 boundary edits + 2 added + 2 issued + 1 branch + 1 deleted + 1 restored + 1 remarks + 1005 edits
   const exp = 2 + 2 + 2 + 1 + 1 + 1 + 1 + 1005;
-  check('tamang bilang ng galaw sa Oktubre (hindi kasama ang Sept 30 / Nov 1)', status.startsWith(exp + ' change(s)'), status);
+  check('correct number of changes in October (Sept 30 / Nov 1 excluded)', status.startsWith(exp + ' change(s)'), status);
   const summary = (await page.locator('#mrPreview .report-summary tbody td').allInnerTexts()).map(Number);
   console.log('     summary [new, issued, branch, disposed, restored, missing, found, edits, total, assets]:', JSON.stringify(summary));
   check('summary: new=2 issued=2 branch=1 disposed=1 (lumang "Deleted") restored=1 missing=0 found=0', summary[0] === 2 && summary[1] === 2 && summary[2] === 1 && summary[3] === 1 && summary[4] === 1 && summary[5] === 0 && summary[6] === 0);
   check('summary: edits = 1005 + 2 (hangganan) + 1 (remarks) = 1008', summary[7] === 1008, 'edits=' + summary[7]);
   const octText = await page.innerText('#mrPreview');
-  check('lumang "Asset Deleted" ay lumalabas bilang DISPOSED na may paliwanag', octText.includes('logged as "deleted" before Dispose was added'));
+  check('old "Asset Deleted" shows as DISPOSED with an explanation', octText.includes('logged as "deleted" before Dispose was added'));
   const previewHtml = await page.innerHTML('#mrPreview');
-  check('pangalan ng na-delete na asset ay lumalabas (Admin)', previewHtml.includes('OLD PRINTER (DELETED)'));
-  check('walang injected <img onerror> sa preview (XSS)', (await page.locator('#mrPreview img').count()) === 0);
-  check('walang naipatakbong code', (await page.evaluate(() => window.__pwned)) !== 1);
+  check('name of the deleted asset is shown (Admin)', previewHtml.includes('OLD PRINTER (DELETED)'));
+  check('no injected <img onerror> in the preview (XSS)', (await page.locator('#mrPreview img').count()) === 0);
+  check('no injected code ran', (await page.evaluate(() => window.__pwned)) !== 1);
 
   // CSV
   const [download] = await Promise.all([page.waitForEvent('download'), page.click('#mrCsvBtn')]);
@@ -152,15 +152,15 @@ const FAKE_SUPABASE = `
   const csv = fs.readFileSync(csvPath, 'utf8');
   const csvLines = csv.split('\r\n');
   check('CSV filename tama', download.suggestedFilename() === 'INNOVPHIL_Monthly_Report_2026-10_ALL.csv', download.suggestedFilename());
-  check('CSV may BOM para sa Excel', csv.charCodeAt(0) === 0xfeff);
+  check('CSV has a BOM for Excel', csv.charCodeAt(0) === 0xfeff);
   check('CSV: 1 header + ' + exp + ' row', csvLines.length === exp + 1, 'lines=' + csvLines.length);
-  check('CSV: ang "=HYPERLINK" ay hindi magiging formula', csv.includes(`"'=HYPERLINK(""http://evil"")"`) && !csv.includes(',"=HYPERLINK'));
+  check('CSV: "=HYPERLINK" does not become a formula', csv.includes(`"'=HYPERLINK(""http://evil"")"`) && !csv.includes(',"=HYPERLINK'));
   check('CSV: header tama', csvLines[0].replace('\uFEFF','') === '"Date","Time","Category","Asset ID","Asset Name","Branch","Field","Old Value","New Value","Changed By"');
 
   // Print -> PDF
   await page.click('#mrPrintBtn');
-  check('print ay tinawag', (await page.evaluate(() => window.__printed)) === true);
-  check('body may print-mode-report', await page.evaluate(() => document.body.classList.contains('print-mode-report')));
+  check('print was called', (await page.evaluate(() => window.__printed)) === true);
+  check('body has print-mode-report', await page.evaluate(() => document.body.classList.contains('print-mode-report')));
   await page.emulateMedia({ media: 'print' });
   await page.pdf({ path: path.join(OUT, 'report-all.pdf'), format: 'A4', printBackground: true });
   await page.emulateMedia({ media: 'screen' });
@@ -171,81 +171,81 @@ const FAKE_SUPABASE = `
   await page.click('#mrGenerateBtn');
   await page.waitForFunction(() => /change\(s\)|No changes/.test(document.getElementById('mrStatus').textContent));
   const mk = await page.innerText('#mrPreview');
-  check('branch filter MAKATI: may lumabas na MAKATI item at ang branch transfer', mk.includes('IPHLMAKATI-00004') && !mk.includes('IPHLNAGA-00007'));
+  check('branch filter MAKATI: shows the MAKATI item and the branch transfer', mk.includes('IPHLMAKATI-00004') && !mk.includes('IPHLNAGA-00007'));
 
   // ---------------- DISPOSE ----------------
   await page.click('#mrCloseBtn');
   const dbRows = () => page.evaluate(() => window.__DB.assets);
   const firstDispose = page.locator('#tableBody button[data-action="dispose"]').first();
-  check('may "📦 Dispose" button (wala nang "Del")', (await firstDispose.innerText()).includes('Dispose'));
+  check('has a "📦 Dispose" button (no more "Del")', (await firstDispose.innerText()).includes('Dispose'));
   const disposeId = await firstDispose.getAttribute('data-id');
   await firstDispose.click();
-  check('bumukas ang Dispose modal', await page.isVisible('#disposeAssetModal'));
+  check('Dispose modal opens', await page.isVisible('#disposeAssetModal'));
   const localToday = await page.evaluate(() => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); });
-  check('default na petsa ay ARAW NGAYON sa oras ng user', (await page.inputValue('#disposeDate')) === localToday, localToday);
+  check('default date is TODAY in the user local timezone', (await page.inputValue('#disposeDate')) === localToday, localToday);
   await page.click('#disposeConfirmBtn');
-  check('walang reason -> may error, hindi natuloy', (await page.innerText('#disposeError')).includes('reason') && (await dbRows()).find(a => a.id === disposeId).is_deleted !== true);
+  check('no reason -> error shown, nothing saved', (await page.innerText('#disposeError')).includes('reason') && (await dbRows()).find(a => a.id === disposeId).is_deleted !== true);
   await page.selectOption('#disposeReason', 'OTHER');
   await page.click('#disposeConfirmBtn');
-  check('"OTHER" na walang remarks -> hinarang', (await page.innerText('#disposeError')).includes('Remarks'));
+  check('"OTHER" without remarks -> blocked', (await page.innerText('#disposeError')).includes('Remarks'));
   await page.selectOption('#disposeReason', 'SOLD');
   await page.fill('#disposeRemarks', 'Sold to ABC Corp, OR #1234');
   await page.click('#disposeConfirmBtn');
   await page.waitForTimeout(300);
   const disposed = (await dbRows()).find(a => a.id === disposeId);
-  check('na-dispose: is_deleted + reason + petsa + remarks + sino', disposed.is_deleted === true && disposed.disposal_reason === 'SOLD' && disposed.disposal_date === localToday && disposed.disposal_remarks.includes('ABC') && disposed.deleted_by === 'admin@x.com');
+  check('disposed: is_deleted + reason + date + remarks + who', disposed.is_deleted === true && disposed.disposal_reason === 'SOLD' && disposed.disposal_date === localToday && disposed.disposal_remarks.includes('ABC') && disposed.deleted_by === 'admin@x.com');
   const dlog = await page.evaluate(() => window.__log.filter((l) => l[0] === 'asset_edit_history' && l[2].field_changed === 'Asset Disposed'));
-  check('naka-log na "Asset Disposed" kasama ang pangalan at dahilan', dlog.length === 1 && dlog[0][2].old_value === 'ITEM 2' && dlog[0][2].new_value.startsWith('SOLD (' + localToday + ')'), dlog[0] && dlog[0][2].new_value);
-  check('nawala sa dashboard (1199)', (await page.innerText('#totalCounter')).trim() === '1199');
+  check('"Asset Disposed" is logged with the name and reason', dlog.length === 1 && dlog[0][2].old_value === 'ITEM 2' && dlog[0][2].new_value.startsWith('SOLD (' + localToday + ')'), dlog[0] && dlog[0][2].new_value);
+  check('removed from the dashboard (1199)', (await page.innerText('#totalCounter')).trim() === '1199');
   // Disposed Items list
   await page.click('.settings-gear-btn');
-  check('Admin: "📦 Disposed Items" ang label (hindi Deleted)', (await page.innerText('#deletedItemsMenuLink')).includes('Disposed Items'));
+  check('Admin: label is "📦 Disposed Items" (not Deleted)', (await page.innerText('#deletedItemsMenuLink')).includes('Disposed Items'));
   await page.click('#deletedItemsMenuLink');
   await page.waitForFunction(() => document.querySelectorAll('#deletedItemsTableBody tr').length >= 2);
   const dTxt = await page.innerText('#deletedItemsTableBody');
-  check('Disposed Items ay may reason, petsa, remarks', dTxt.includes('SOLD') && dTxt.includes(localToday) && dTxt.includes('ABC Corp'));
-  check('lumang "deleted" ay may label na previously deleted', dTxt.includes('UNSPECIFIED') || dTxt.includes('---'));
+  check('Disposed Items shows reason, date, remarks', dTxt.includes('SOLD') && dTxt.includes(localToday) && dTxt.includes('ABC Corp'));
+  check('old "deleted" items are labelled as previously deleted', dTxt.includes('UNSPECIFIED') || dTxt.includes('---'));
   await page.click('#deletedItemsModal .modal-actions button');
 
   // ---------------- MISSING (during physical count) ----------------
   await page.click('#physicalCountBtn');
   await page.waitForFunction(() => document.querySelectorAll('#countEntryTableBody .countMissingCheck').length > 100);
-  check('count entry: may "NOT FOUND?" column', (await page.locator('#countEntryModal th.th-missing').count()) === 1);
+  check('count entry: has a "NOT FOUND?" column', (await page.locator('#countEntryModal th.th-missing').count()) === 1);
   const rowsInModal = await page.locator('#countEntryTableBody tr[data-row-asset-id]').count();
-  check('count entry ay may 1,199 row (wala ang na-dispose)', rowsInModal === 1199, String(rowsInModal));
+  check('count entry has 1,199 rows (the disposed one is excluded)', rowsInModal === 1199, String(rowsInModal));
   const r1 = page.locator('#countEntryTableBody tr[data-row-asset-id]').nth(0);
   const r2 = page.locator('#countEntryTableBody tr[data-row-asset-id]').nth(1);
   const miss1 = await r1.getAttribute('data-row-asset-id');
   const miss2 = await r2.getAttribute('data-row-asset-id');
   await r1.locator('.countMissingCheck').check();
   await r2.locator('.countMissingCheck').check();
-  await r1.locator('.countRemarksInput').fill('Hinanap sa bodega, wala');
-  check('pag-tick ng Missing: counted=0, naka-lock, variance -1', (await r1.locator('.countedQtyInput').inputValue()) === '0' && (await r1.locator('.countedQtyInput').isDisabled()) && (await r1.locator('.variance-cell').innerText()) === '-1');
+  await r1.locator('.countRemarksInput').fill('Searched the warehouse, not found');
+  check('ticking Missing: counted=0, locked, variance -1', (await r1.locator('.countedQtyInput').inputValue()) === '0' && (await r1.locator('.countedQtyInput').isDisabled()) && (await r1.locator('.variance-cell').innerText()) === '-1');
   await r2.locator('.countMissingCheck').uncheck();
-  check('pag-untick: bumabalik sa system qty at na-unlock', (await r2.locator('.countedQtyInput').inputValue()) === '1' && !(await r2.locator('.countedQtyInput').isDisabled()));
+  check('unticking: returns to system qty and unlocks', (await r2.locator('.countedQtyInput').inputValue()) === '1' && !(await r2.locator('.countedQtyInput').isDisabled()));
   await r2.locator('.countMissingCheck').check();
   await page.evaluate(() => { window.__printed = false; });
   await page.click('#countEntryModal button.btn-dark');
   await page.waitForSelector('#customConfirmModal', { state: 'visible' });
-  check('may confirmation bago i-mark na missing', (await page.innerText('#customConfirmMessage')).includes('2 item(s)'));
+  check('a confirmation appears before marking as missing', (await page.innerText('#customConfirmMessage')).includes('2 item(s)'));
   await page.click('#customConfirmOkBtn');
   await page.waitForFunction(() => window.__printed === true, null, { timeout: 15000 });
   const dbA = await dbRows();
   const m1 = dbA.find(a => a.id === miss1), m2 = dbA.find(a => a.id === miss2);
-  check('na-mark na missing sa database kasama ang petsa/huling hawak/remarks/sino', m1.is_missing === true && m1.missing_date === localToday && m1.missing_remarks === 'Hinanap sa bodega, wala' && m1.missing_marked_by === 'admin@x.com' && m2.is_missing === true, m1.missing_date);
+  check('marked missing in the database with date/last holder/remarks/who', m1.is_missing === true && m1.missing_date === localToday && m1.missing_remarks === 'Searched the warehouse, not found' && m1.missing_marked_by === 'admin@x.com' && m2.is_missing === true, m1.missing_date);
   const mlog = await page.evaluate(() => window.__log.filter((l) => l[0] === 'asset_edit_history' && l[2].field_changed === 'Asset Marked Missing'));
-  check('naka-log ang 2 "Asset Marked Missing"', mlog.length === 2 && mlog[0][2].new_value.startsWith('Not found during physical count ' + localToday), mlog[0] && mlog[0][2].new_value);
+  check('2 "Asset Marked Missing" entries are logged', mlog.length === 2 && mlog[0][2].new_value.startsWith('Not found during physical count ' + localToday), mlog[0] && mlog[0][2].new_value);
   const savedCounts = await page.evaluate(() => window.__DB.asset_counts.filter(c => c.counted_qty === 0).length);
-  check('na-save ang count na 0 para sa missing', savedCounts === 2);
+  check('count of 0 is saved for missing items', savedCounts === 2);
   const hist = await page.evaluate(() => window.__DB.count_history[0]);
-  check('Count History: may "MISSING" sa remarks', JSON.stringify(hist).includes('MISSING — Hinanap sa bodega, wala'));
+  check('Count History: remarks contain "MISSING"', JSON.stringify(hist).includes('MISSING — Searched the warehouse, not found'));
   await page.waitForFunction(() => document.getElementById('totalCounter').innerText.trim() === '1197');
-  check('dashboard bumaba sa 1,197 (hindi na binibilang ang missing)', true);
+  check('dashboard dropped to 1,197 (missing items are no longer counted)', true);
 
-  // hindi na kasama sa susunod na bilang
+  // no longer included in the next count
   await page.click('#physicalCountBtn');
   await page.waitForFunction(() => document.querySelectorAll('#countEntryTableBody .countMissingCheck').length > 100);
-  check('susunod na count: 1,197 row lang, wala ang 2 missing', (await page.locator('#countEntryTableBody tr[data-row-asset-id]').count()) === 1197 && (await page.locator(`#countEntryTableBody tr[data-row-asset-id="${miss1}"]`).count()) === 0);
+  check('next count: only 1,197 rows, the 2 missing items are excluded', (await page.locator('#countEntryTableBody tr[data-row-asset-id]').count()) === 1197 && (await page.locator(`#countEntryTableBody tr[data-row-asset-id="${miss1}"]`).count()) === 0);
   await page.evaluate(() => closeCountEntryModal());
 
   // ---------------- MISSING ITEMS screen ----------------
@@ -253,20 +253,20 @@ const FAKE_SUPABASE = `
   await page.click('#missingItemsMenuLink');
   await page.waitForFunction(() => document.querySelectorAll('#missingItemsTableBody button[data-found]').length === 2);
   const mTxt = await page.innerText('#missingItemsTableBody');
-  check('Missing Items list: 2 item, may remarks at petsa', mTxt.includes(miss1) && mTxt.includes(miss2) && mTxt.includes('Hinanap sa bodega') && mTxt.includes(localToday));
+  check('Missing Items list: 2 items with remarks and date', mTxt.includes(miss1) && mTxt.includes(miss2) && mTxt.includes('Searched the warehouse') && mTxt.includes(localToday));
   await page.locator(`#missingItemsTableBody button[data-found="${miss1}"]`).click();
   await page.click('#customConfirmOkBtn');
   await page.waitForFunction(() => document.querySelectorAll('#missingItemsTableBody button[data-found]').length === 1);
   const found = (await dbRows()).find(a => a.id === miss1);
-  check('Found: bumalik sa active at nabura ang missing details', found.is_missing === false && found.missing_date === null && found.missing_remarks === null);
+  check('Found: back to active and missing details cleared', found.is_missing === false && found.missing_date === null && found.missing_remarks === null);
   await page.waitForFunction(() => document.getElementById('totalCounter').innerText.trim() === '1198');
-  check('Found: bumalik sa dashboard (1,198)', true);
+  check('Found: back on the dashboard (1,198)', true);
   await page.locator(`#missingItemsTableBody button[data-writeoff="${miss2}"]`).click();
-  check('Write-off: bumukas ang Dispose modal na naka-preset na "LOST / STOLEN"', (await page.inputValue('#disposeReason')) === 'LOST / STOLEN');
+  check('Write-off: Dispose modal opens preset to "LOST / STOLEN"', (await page.inputValue('#disposeReason')) === 'LOST / STOLEN');
   await page.click('#disposeConfirmBtn');
   await page.waitForFunction(() => document.querySelectorAll('#missingItemsTableBody button[data-found]').length === 0);
   const wo = (await dbRows()).find(a => a.id === miss2);
-  check('Write-off: Disposed na (LOST / STOLEN) at hindi na missing', wo.is_deleted === true && wo.disposal_reason === 'LOST / STOLEN' && wo.is_missing === false);
+  check('Write-off: now Disposed (LOST / STOLEN) and no longer missing', wo.is_deleted === true && wo.disposal_reason === 'LOST / STOLEN' && wo.is_missing === false);
   await page.click('#missingCloseBtn');
 
   // ---------------- REPORT reflects everything (current month) ----------------
@@ -278,11 +278,11 @@ const FAKE_SUPABASE = `
   await page.click('#mrGenerateBtn');
   await page.waitForFunction(() => /change\(s\)/.test(document.getElementById('mrStatus').textContent));
   const nowSummary = (await page.locator('#mrPreview .report-summary tbody td').allInnerTexts()).map(Number);
-  console.log('     buwang ito [new, issued, branch, disposed, restored, missing, found, edits, total, assets]:', JSON.stringify(nowSummary));
-  check('report ngayong buwan: disposed=2 (SOLD + LOST), missing=2, found=1', nowSummary[3] === 2 && nowSummary[5] === 2 && nowSummary[6] === 1, JSON.stringify(nowSummary));
+  console.log('     this month [new, issued, branch, disposed, restored, missing, found, edits, total, assets]:', JSON.stringify(nowSummary));
+  check('report for this month: disposed=2 (SOLD + LOST), missing=2, found=1', nowSummary[3] === 2 && nowSummary[5] === 2 && nowSummary[6] === 1, JSON.stringify(nowSummary));
   const nowHtml = await page.innerText('#mrPreview');
-  check('report: nakalista ang dahilan ng disposal at ang details ng missing', nowHtml.includes('SOLD (') && nowHtml.includes('LOST / STOLEN (') && nowHtml.includes('Not found during physical count'));
-  check('report: may seksyong "3. DISPOSED / RESTORED" at "4. MISSING / FOUND"', nowHtml.includes('3. DISPOSED / RESTORED') && nowHtml.includes('4. MISSING / FOUND'));
+  check('report: lists the disposal reason and the missing details', nowHtml.includes('SOLD (') && nowHtml.includes('LOST / STOLEN (') && nowHtml.includes('Not found during physical count'));
+  check('report: has sections "3. DISPOSED / RESTORED" and "4. MISSING / FOUND"', nowHtml.includes('3. DISPOSED / RESTORED') && nowHtml.includes('4. MISSING / FOUND'));
   await page.click('#mrCloseBtn');
   await page.context().close();
 
@@ -290,22 +290,22 @@ const FAKE_SUPABASE = `
   page = await newPage('ACCOUNTING', 'acct@x.com');
   await runReport(page, 9, 2026);
   const acctHtml = await page.innerHTML('#mrPreview');
-  check('Accounting nakakagawa ng report', (await page.innerText('#mrStatus')).includes('change(s)'));
-  check('Accounting: may Dispose button at Missing Items link', (await page.locator('#tableBody button[data-action="dispose"]').count()) > 0 && (await page.locator('#missingItemsMenuLink').count()) === 1);
-  check('Accounting: HINDI makita ang Disposed Items (Admin lang, restore)', await page.evaluate(() => getComputedStyle(document.getElementById('deletedItemsMenuLink')).display === 'none'));
-  check('Accounting: pangalan ng na-delete na asset ay galing sa mismong event (hindi niya mabasa ang deleted)', acctHtml.includes('OLD PRINTER (DELETED)'));
+  check('Accounting can generate the report', (await page.innerText('#mrStatus')).includes('change(s)'));
+  check('Accounting: has the Dispose button and the Missing Items link', (await page.locator('#tableBody button[data-action="dispose"]').count()) > 0 && (await page.locator('#missingItemsMenuLink').count()) === 1);
+  check('Accounting: CANNOT see Disposed Items (Admin only, restore)', await page.evaluate(() => getComputedStyle(document.getElementById('deletedItemsMenuLink')).display === 'none'));
+  check('Accounting: the deleted asset name comes from the event itself (cannot read deleted rows)', acctHtml.includes('OLD PRINTER (DELETED)'));
   await page.context().close();
 
   console.log('\n[3] VIEWER');
   page = await newPage('VIEWER', 'view@x.com');
-  check('Viewer: WALANG Monthly Report link', (await page.locator('#monthlyReportMenuLink').count()) === 0);
-  check('Viewer: WALANG Missing Items link at WALANG Dispose button', (await page.locator('#missingItemsMenuLink').count()) === 0 && (await page.locator('#tableBody button[data-action="dispose"]').count()) === 0);
-  check('Viewer: hindi makapag-dispose kahit tawagin sa console', await page.evaluate(async () => { await window.disposeAssetRecord('IPHLNAGA-00003'); const m = document.getElementById('disposeAssetModal'); return !m || m.style.display !== 'flex'; }));
-  check('Viewer: hindi makabukas kahit tawagin sa console', await page.evaluate(() => { window.openMonthlyReportModal(); const m = document.getElementById('monthlyReportModal'); return !m || m.style.display !== 'flex'; }));
+  check('Viewer: NO Monthly Report link', (await page.locator('#monthlyReportMenuLink').count()) === 0);
+  check('Viewer: NO Missing Items link and NO Dispose button', (await page.locator('#missingItemsMenuLink').count()) === 0 && (await page.locator('#tableBody button[data-action="dispose"]').count()) === 0);
+  check('Viewer: cannot dispose even when called from the console', await page.evaluate(async () => { await window.disposeAssetRecord('IPHLNAGA-00003'); const m = document.getElementById('disposeAssetModal'); return !m || m.style.display !== 'flex'; }));
+  check('Viewer: cannot open it even when called from the console', await page.evaluate(() => { window.openMonthlyReportModal(); const m = document.getElementById('monthlyReportModal'); return !m || m.style.display !== 'flex'; }));
   await page.context().close();
 
   await browser.close(); server.close();
   const bad = results.filter((r) => !r).length;
-  console.log(`\n${results.length - bad}/${results.length} pumasa` + (bad ? `  —  ${bad} BUMAGSAK` : ''));
+  console.log(`\n${results.length - bad}/${results.length} passed` + (bad ? `  —  ${bad} FAILED` : ''));
   process.exit(bad ? 1 : 0);
 })().catch((e) => { console.error('E2E FAILED:', e); server.close(); process.exit(2); });

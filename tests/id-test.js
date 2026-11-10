@@ -3,7 +3,7 @@ const DIR=process.argv[2];
 const dom=new JSDOM(`<body>
 <input id="modalTargetIndexId"><input id="formAssetId"><select id="formAssetBranch"><option>NAGA</option><option>MAKATI</option></select>
 <div id="assetDataModal"></div>
-<input type="file" id="formAssetImageFile">${['Name','Brand','Model','Description','SerialNumber','ItemCategory','ImageUrl','IssuedTo','PurchaseDate','UnitPrice','Quantity','UsefulLife','Note','TrackingDate','Amount','Unit'].map(n=>`<input id="formAsset${n}">`).join('')}
+<input type="file" id="formAssetImageFile">${['Name','Brand','Model','Description','SerialNumber','ItemCategory','ImageUrl','IssuedTo','PurchaseDate','UnitPrice','Quantity','UsefulLife','Note','TrackingDate','Amount','Unit','Department','Supplier','SupplierContact','SupplierAddress','WarrantyMonths','WarrantyExpiration'].map(n=>`<input id="formAsset${n}">`).join('')}
 <select id="formAssetCategory"><option>IT EQUIPMENT</option></select><select id="formAssetCondition"><option>IN CONDITION</option></select><select id="formAssetStatus"><option>IN USE</option></select>
 <h2 id="modalBoxTitle"></h2><img id="formAssetImagePreview"><button id="removeAssetImageBtn"></button>
 </body>`,{runScripts:'outside-only',url:'https://example.test/dashboard/'});
@@ -23,20 +23,20 @@ w.eval(src+';window.logAssetEvent=async()=>{};window.__run=(c)=>eval(c);'); cons
   const id=()=>w.document.getElementById('formAssetId').value;
   existing=['IPHL-APP-001','IPHLNAGA-00040','IPHLNAGA-00041','IPHLMAKATI-00007'];
   run(`openAssetInsertModal()`); await tick();
-  console.log('NAGA  (may 00041)        ->', id(), id()==='IPHLNAGA-00042'?'OK':'MALI');
+  console.log('NAGA  (has 00041)        ->', id(), id()==='IPHLNAGA-00042'?'OK':'WRONG');
   w.document.getElementById('formAssetBranch').value='MAKATI'; w.document.getElementById('formAssetBranch').dispatchEvent(new w.Event('change')); await tick();
-  console.log('MAKATI (may 00007)       ->', id(), id()==='IPHLMAKATI-00008'?'OK':'MALI');
+  console.log('MAKATI (has 00007)       ->', id(), id()==='IPHLMAKATI-00008'?'OK':'WRONG');
   existing=[]; w.document.getElementById('formAssetBranch').value='NAGA'; w.document.getElementById('formAssetBranch').dispatchEvent(new w.Event('change')); await tick();
-  console.log('NAGA  (wala pang bago)   ->', id(), id()==='IPHLNAGA-00001'?'OK':'MALI');
+  console.log('NAGA  (none yet)         ->', id(), id()==='IPHLNAGA-00001'?'OK':'WRONG');
   console.log('placeholder              ->', w.document.getElementById('formAssetId').placeholder);
   const f=w.document.getElementById('formAssetId');
-  console.log('field read-only          ->', f.readOnly===true?'OK':'MALI');
+  console.log('field read-only          ->', f.readOnly===true?'OK':'WRONG');
   // even if someone forces a wrong/old value via devtools, save regenerates the correct next ID
   existing=['IPHLNAGA-00041']; f.value='IPHLMAKATI-00001'; w.document.getElementById('formAssetName').value='x'; alerts.length=0; inserted=[];
   await run(`commitAssetStorageChange()`);
-  console.log('pinilit na maling ID     -> na-save bilang:', inserted[0] && inserted[0].id, inserted[0] && inserted[0].id==='IPHLNAGA-00042'?'OK':'MALI');
+  console.log('forced wrong ID         -> saved as:', inserted[0] && inserted[0].id, inserted[0] && inserted[0].id==='IPHLNAGA-00042'?'OK':'WRONG');
   // duplicate key
   inserted=[]; insertError={code:'23505',message:'dup'}; existing=['IPHLNAGA-00005']; alerts.length=0;
   w.document.getElementById('formAssetId').value='IPHLNAGA-00005'; await run(`commitAssetStorageChange()`); await tick();
-  console.log('duplicate (23505)        -> bagong ID:', id(), '| mensahe:', (alerts[0]||'').slice(0,45));
+  console.log('duplicate (23505)        -> new ID:', id(), '| message:', (alerts[0]||'').slice(0,45));
 })();

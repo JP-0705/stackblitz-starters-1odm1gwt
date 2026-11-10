@@ -1,26 +1,28 @@
 # INNOVPHIL Asset Portal
 
-HTML + JavaScript + Supabase. Walang build step.
+HTML + JavaScript + Supabase. There is no build step.
 
-## Deploy sa Vercel
-1. I-upload ang folder na ito sa private GitHub repo, tapos i-import sa Vercel (Framework: "Other", walang build command).
-2. Ang `vercel.json` ang naglalagay ng security headers. Ang `.vercelignore` ay pumipigil na ma-publish ang `tests/` at `migrations/`.
-3. Sa Supabase → Authentication → URL Configuration, ilagay ang Vercel URL mo sa Site URL at Redirect URLs.
+## Deploying on Vercel
+1. Upload this folder to a private GitHub repository, then import it in Vercel (Framework: "Other", no build command).
+2. `vercel.json` adds the security headers. `.vercelignore` keeps `tests/` and `migrations/` from being published.
+3. In Supabase, go to Authentication → URL Configuration and add your Vercel URL to the Site URL and Redirect URLs.
 
-## Database (Supabase SQL Editor) — sundin ang pagkakasunod-sunod
-Tingnan kung alin na ang naipatakbo: `select * from public.schema_migrations order by applied_at;`
+## Database (Supabase SQL Editor) — run in this order
+Check which migrations have already run: `select * from public.schema_migrations order by applied_at;`
 1. `migrations/000_migration_log.sql`
 2. `migrations/001_dispose_missing_and_permissions.sql`
-3. `migrations/002_data_checks.sql` (basahin ang HAKBANG 1 sa itaas ng file bago patakbuhin)
-Kapag may bagong pagbabago sa database, gumawa ng bagong file (`003_...`) at huwag nang galawin ang luma.
+3. `migrations/002_data_checks.sql` (read STEP 1 at the top of the file before running it)
+4. `migrations/003_new_fields.sql` (Department, Supplier, Warranty, Witnessed By) — run BEFORE deploying the code
 
-## Backup (kada linggo)
-Table Editor → Export to CSV: `assets`, `asset_edit_history`, `asset_counts`, `count_history`. I-save sa Drive na may petsa.
-Hindi kasama ang mga litrato sa `asset-images`.
+For any future database change, add a new numbered file (`004_...`) and never edit an old one.
 
-## Mga test (opsyonal, para sa developer)
+## Backup (weekly)
+Table Editor → Export to CSV: `assets`, `asset_edit_history`, `asset_counts`, `count_history`. Save the files to Drive with the date in the name.
+Photos in the `asset-images` bucket are not included in the CSV export.
+
+## Tests (optional, for developers)
 ```
 cd tests && npm install && npx playwright install chromium
 npm run test:all
 ```
-Gumagamit ang mga test ng pekeng Supabase; hindi nila ginagalaw ang totoong database.
+The tests use a fake Supabase and never touch the real database.

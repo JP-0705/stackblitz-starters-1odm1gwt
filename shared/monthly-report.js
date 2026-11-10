@@ -152,6 +152,9 @@
       title: `${MONTH_NAMES[monthIndex]} ${year}`,
       generatedAt: new Date(),
       generatedBy: activeUserSession.email,
+      preparedBy:
+        (document.getElementById('mrPreparedBy') && document.getElementById('mrPreparedBy').value.trim()) ||
+        activeUserSession.email,
       rows,
       counts: {
         added: rows.filter((r) => r.category === 'NEW ASSET').length,
@@ -208,7 +211,7 @@
       <div class="report-head">
         <h2>INNOVPHIL MONTHLY ASSET REPORT — ${escapeHtml(report.title.toUpperCase())}</h2>
         <p>${escapeHtml(branchLabel)} — Generated ${escapeHtml(fmtDate(report.generatedAt))} ${escapeHtml(fmtTime(report.generatedAt))}
-           by ${escapeHtml(report.generatedBy)}</p>
+           by ${escapeHtml(report.generatedBy)} — Prepared by: ${escapeHtml(report.preparedBy || report.generatedBy)}</p>
       </div>
       <table class="report-table report-summary">
         <thead><tr>
@@ -299,6 +302,8 @@
             <select id="mrYear" style="padding:8px; border:1px solid #cbd5e1; border-radius:8px;"></select></label>
           <label style="font-size:12px; color:#475569;">Branch<br>
             <select id="mrBranch" style="padding:8px; border:1px solid #cbd5e1; border-radius:8px;"></select></label>
+          <label style="font-size:12px; color:#475569;">Prepared by<br>
+            <input id="mrPreparedBy" type="text" style="padding:8px; border:1px solid #cbd5e1; border-radius:8px;" /></label>
           <button type="button" id="mrGenerateBtn" class="action-btn">Generate Report</button>
         </div>
         <div id="mrStatus" style="font-size:12px; color:#64748b; margin-bottom:8px;"></div>
@@ -340,6 +345,7 @@
   function openMonthlyReportModal() {
     if (!userCanUseReport()) return;
     ensureModal();
+    if (!el('mrPreparedBy').value) el('mrPreparedBy').value = activeUserSession.email || '';
     // Default to LAST month — the usual case is reporting on the month just ended.
     const now = new Date();
     const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -408,6 +414,8 @@
 
   function printMonthlyReport() {
     if (!lastReport) return;
+    const issuanceArea = document.getElementById('issuanceReportPrintArea');
+    if (issuanceArea) issuanceArea.innerHTML = ''; // only one print area may have content
     el('monthlyReportPrintArea').innerHTML = buildReportHtml(lastReport);
     const previousTitle = document.title;
     document.title = reportFileStem(lastReport); // becomes the suggested PDF file name
