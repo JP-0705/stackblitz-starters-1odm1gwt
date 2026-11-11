@@ -3,13 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Analytics — IMS</title>
+    <title>Dashboard — IMS</title>
     <link rel="stylesheet" href="/shared/styles.css" />
     <script
       src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"
       onerror="document.getElementById('diagBanner').style.display='block'; document.getElementById('diagBanner').innerText='DIAGNOSTIC: The Supabase library failed to load from the CDN (network/ad-blocker/offline issue).';"
     ></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
     <div
       id="diagBanner"
       style="
@@ -102,14 +101,22 @@
         </button>
       </div>
         <nav class="nav-menu">
-          <a href="/analytics/" class="nav-btn active" id="analyticsNavBtn"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg><span>Analytics</span></a>
-          <a href="/dashboard/" class="nav-btn"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg><span>Dashboard</span></a>
+          <a href="/analytics/" class="nav-btn active" id="analyticsNavBtn"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg><span>Dashboard</span></a>
+          <a href="/dashboard/" class="nav-btn"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg><span>All Inventory</span></a>
           <a href="/appliances/" class="nav-btn"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg><span>Appliances</span></a>
           <a href="/furniture-fixtures/" class="nav-btn"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="4" rx="1"></rect><path d="M5 7v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7"></path><line x1="10" y1="12" x2="14" y2="12"></line></svg><span>Furnitures & Fixtures</span></a>
           <a href="/office-supplies/" class="nav-btn"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6a1 1 0 0 1 1 1v2H8V5a1 1 0 0 1 1-1z"></path><rect x="6" y="6" width="12" height="15" rx="1"></rect><line x1="9" y1="11" x2="15" y2="11"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg><span>Office Supplies</span></a>
           <a href="/it-equipment/" class="nav-btn"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="18" x2="12" y2="21"></line></svg><span>IT Equipment</span></a>
           <a href="/vehicle-others/" class="nav-btn"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="9" rx="1"></rect><path d="M15 10h3.5l3.5 3v3h-7z"></path><circle cx="5.5" cy="18.5" r="1.5"></circle><circle cx="17.5" cy="18.5" r="1.5"></circle></svg><span>Vehicle & Others</span></a>
           <a href="/aha-equipment/" class="nav-btn"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.66 5.66L2 19l3 3 7-7.04a4 4 0 0 0 5.66-5.66l-2.83 2.83-2-2z"></path></svg><span>AHA Equipment</span></a>
+          <div id="formsNavGroup" class="nav-group" style="display:none;">
+            <button type="button" class="nav-btn nav-group-toggle" id="formsGroupToggle" aria-expanded="false"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><polyline points="14 3 14 8 19 8"></polyline><line x1="9" y1="13" x2="15" y2="13"></line><line x1="9" y1="17" x2="15" y2="17"></line></svg><span>Forms</span><svg class="nav-chev" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
+            <div class="nav-sub" id="formsSub" style="display:none;">
+              <a href="/forms/" class="nav-sub-link"><span>IT Forms</span></a>
+              <a href="/forms/accounting/" class="nav-sub-link"><span>Accounting Forms</span></a>
+              <a href="/forms/pmd/" class="nav-sub-link"><span>PMD Forms</span></a>
+            </div>
+          </div>
         </nav>
       </div>
 
@@ -133,102 +140,96 @@
     </aside>
 
     <main class="main-viewport">
-      <header class="top-header">
-        <div class="metrics-group no-print">
-          <div class="stat-card">
-            <span class="stat-icon">📦</span>
-            <span class="stat-text">
-              <span class="stat-label">UNIQUE ITEMS</span>
-              <span id="uniqueCounter" class="stat-value">0</span>
-            </span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-icon stat-icon-violet">🗂️</span>
-            <span class="stat-text">
-              <span class="stat-label">TOTAL COUNT</span>
-              <span id="totalCounter" class="stat-value">0</span>
-            </span>
-          </div>
-          <div class="branch-picker">
-            <span class="stat-icon">🏢</span>
-            <span class="stat-text">
-              <span class="branch-label">OFFICE BRANCH</span>
-              <select id="branchFilterSelect" class="branch-value-select" onchange="handleBranchFilterChange()">
-                <option value="ALL" selected>ALL BRANCH</option>
-                <option value="NAGA">NAGA BRANCH</option>
-                <option value="MAKATI">MAKATI BRANCH</option>
-              </select>
-            </span>
-          </div>
-        </div>
-        <div class="action-header-group no-print">
-          <button id="addNewAssetMasterBtn" onclick="openAssetInsertModal()" class="action-btn btn-green">➕ Add New Asset</button>
-          <button onclick="printBlankCountSheet()" class="action-btn btn-purple-outline" id="blankCountSheetBtn">📝 Blank Count Sheet</button>
-          <button onclick="openPhysicalCountModal()" class="action-btn btn-purple" id="physicalCountBtn">📋 Physical Count</button>
-          <button onclick="window.print()" class="action-btn btn-dark">🖨️ Print List</button>
-        </div>
-      </header>
-
-      <div class="filter-bar no-print">
-        <input type="text" id="globalSearch" onkeyup="searchAssets()" placeholder="Search assets..." class="search-input" />
-        <select id="conditionFilterSelect" class="condition-filter-select" onchange="searchAssets()">
+      <!-- Hidden on purpose: the Physical Count and Blank Count Sheet dialogs read these controls. -->
+      <div class="filter-bar no-print" style="display:none;">
+        <input type="text" id="globalSearch" placeholder="Search assets..." class="search-input" />
+        <select id="conditionFilterSelect" class="condition-filter-select">
           <option value="ALL">ALL</option>
           <option value="IN CONDITION">IN CONDITION</option>
           <option value="DEFECTIVE">DEFECTIVE</option>
           <option value="DISPOSED">DISPOSED</option>
         </select>
         <label class="group-toggle-label">
-          <input type="checkbox" id="groupByIssuedToCheckbox" onchange="searchAssets()" />
+          <input type="checkbox" id="groupByIssuedToCheckbox" />
           Group by Issued To
         </label>
       </div>
-      <div class="analytics-view no-print" style="display: block">
-        <h2 class="analytics-heading">📊 Inventory Overview</h2>
-        <div class="analytics-grid">
-          <div class="analytics-col-left">
-            <div class="chart-card">
-              <h3>📍 Inventory by Branch</h3>
-              <div class="chart-canvas-wrap"><canvas id="branchChart"></canvas></div>
-            </div>
-            <div class="chart-card">
-              <h3>🛠️ Equipment Status</h3>
-              <div class="chart-canvas-wrap"><canvas id="conditionChart"></canvas></div>
-            </div>
-          </div>
-          <div class="analytics-col-right">
-            <div class="chart-card chart-card-large">
-              <h3>📁 Assets by Category</h3>
-              <div class="chart-canvas-wrap chart-canvas-wrap-large"><canvas id="categoryChart"></canvas></div>
-            </div>
-          </div>
-        </div>
 
-        <h2 class="analytics-heading" style="margin-top: 32px;">🏷️ Asset Type Breakdown by Category</h2>
-        <div class="category-pie-grid">
-          <div class="chart-card">
-            <h3>Appliances by Asset Type</h3>
-            <div class="chart-canvas-wrap"><canvas id="categoryPie-APPLIANCES"></canvas></div>
+      <div class="d2 no-print">
+        <section class="d2-hero">
+          <div class="d2-hero-main">
+            <div class="d2-eyebrow" id="d2Date"></div>
+            <h1 class="d2-title">Inventory Overview</h1>
+            <div class="d2-hero-tools">
+              <label class="d2-branch">
+                <span>Branch</span>
+                <select id="branchFilterSelect" onchange="handleBranchFilterChange()">
+                  <option value="ALL" selected>All Branch</option>
+                  <option value="NAGA">Naga Branch</option>
+                  <option value="MAKATI">Makati Branch</option>
+                </select>
+              </label>
+              <div id="countOverdueBadge" class="d2-badge" style="display:none;"></div>
+            </div>
+            <div class="d2-stats">
+              <div class="d2-stat"><div class="d2-stat-num" id="kpiAssets">0</div><div class="d2-stat-label">Assets</div><div class="d2-stat-sub">excluding supplies</div></div>
+              <div class="d2-stat"><div class="d2-stat-num" id="kpiSupplies">0</div><div class="d2-stat-label">Supply items</div><div class="d2-stat-sub">office supplies qty</div></div>
+              <div class="d2-stat"><div class="d2-stat-num" id="kpiValue">₱0.00</div><div class="d2-stat-label">Total value</div><div class="d2-stat-sub">assets and supplies</div></div>
+              <a class="d2-stat d2-stat-warn" href="/dashboard/?condition=DEFECTIVE" title="Show defective items"><div class="d2-stat-num" id="kpiDefective">0</div><div class="d2-stat-label">Defective</div><div class="d2-stat-sub">view list →</div></a>
+            </div>
           </div>
-          <div class="chart-card">
-            <h3>Furnitures &amp; Fixtures by Asset Type</h3>
-            <div class="chart-canvas-wrap"><canvas id="categoryPie-FURNITURES-FIXTURES"></canvas></div>
+          <div class="d2-ring-wrap">
+            <svg viewBox="0 0 140 140" class="d2-ring" aria-hidden="true">
+              <circle cx="70" cy="70" r="58" class="d2-ring-bg"></circle>
+              <circle cx="70" cy="70" r="58" class="d2-ring-fg" id="ringFg" transform="rotate(-90 70 70)"></circle>
+            </svg>
+            <div class="d2-ring-center"><div class="d2-ring-pct" id="ringPct">0%</div><div class="d2-ring-cap">counted</div></div>
+            <div class="d2-ring-note" id="ringNote"></div>
           </div>
-          <div class="chart-card">
-            <h3>Office Supplies by Asset Type</h3>
-            <div class="chart-canvas-wrap"><canvas id="categoryPie-OFFICE-SUPPLIES"></canvas></div>
+        </section>
+
+        <div class="d2-grid">
+          <div class="d2-col">
+            <section class="d2-panel">
+              <h3>Status and condition</h3>
+              <div class="d2-split-label">Asset status</div>
+              <div class="d2-seg" id="statusBar"></div>
+              <div class="d2-legend" id="statusLegend"></div>
+              <div class="d2-split-label">Condition</div>
+              <div class="d2-seg" id="conditionBar"></div>
+              <div class="d2-legend" id="conditionLegend"></div>
+            </section>
+
+            <section class="d2-panel">
+              <h3>Value by category</h3>
+              <div id="valueList"></div>
+            </section>
+
+            <section class="d2-panel">
+              <div class="d2-panel-head"><h3 id="countMonthTitle">Counting progress</h3><span class="d2-muted" id="countMonthNote"></span></div>
+              <div class="d2-tiles" id="countTiles"></div>
+            </section>
           </div>
-          <div class="chart-card">
-            <h3>IT Equipment by Asset Type</h3>
-            <div class="chart-canvas-wrap"><canvas id="categoryPie-IT-EQUIPMENT"></canvas></div>
-          </div>
-          <div class="chart-card">
-            <h3>Vehicle &amp; Others by Asset Type</h3>
-            <div class="chart-canvas-wrap"><canvas id="categoryPie-VEHICLE-OTHERS"></canvas></div>
-          </div>
-          <div class="chart-card">
-            <h3>AHA Equipment by Asset Type</h3>
-            <div class="chart-canvas-wrap"><canvas id="categoryPie-AHA-EQUIPMENT"></canvas></div>
-          </div>
+
+          <aside class="d2-col">
+            <section class="d2-panel">
+              <h3>Quick actions</h3>
+              <div class="d2-actions">
+                <button type="button" id="addNewAssetMasterBtn" onclick="openAssetInsertModal()" class="d2-action"><b>＋</b> Add new asset</button>
+                <button type="button" id="physicalCountBtn" onclick="openPhysicalCountModal()" class="d2-action"><b>✓</b> Physical count</button>
+                <button type="button" id="blankCountSheetBtn" onclick="printBlankCountSheet()" class="d2-action"><b>▤</b> Blank count sheet</button>
+                <button type="button" id="qaMonthlyReport" onclick="clickMenuLink('monthlyReportMenuLink')" class="d2-action" style="display:none;"><b>▦</b> Monthly report</button>
+                <button type="button" id="qaIssuanceReport" onclick="clickMenuLink('issuanceReportMenuLink')" class="d2-action" style="display:none;"><b>⇄</b> Issuance report</button>
+                <a href="/forms/?tab=borrowers" id="borrowersTrackerBtn" class="d2-action d2-action-link" style="display:none;"><b>⇄</b> Borrowers tracker <span id="borrowersBadge" class="d2-borrow-badge"></span></a>
+                <a href="/forms/" id="formsQuickBtn" class="d2-action d2-action-link" style="display:none;"><b>▤</b> IT forms</a>
+                <a href="/dashboard/" class="d2-action d2-action-link"><b>☰</b> Open all inventory</a>
+              </div>
+            </section>
+            <section class="d2-panel">
+              <h3>Recent activity</h3>
+              <ol class="d2-timeline" id="timeline"><li class="d2-muted">Loading…</li></ol>
+            </section>
+          </aside>
         </div>
       </div>
     </main>

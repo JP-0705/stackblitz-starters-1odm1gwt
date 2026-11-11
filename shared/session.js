@@ -45,6 +45,10 @@ function applyRoleVisibility() {
   if (blankBtn) blankBtn.style.display = canManageAssets ? 'block' : 'none';
   const countBtn = document.getElementById('physicalCountBtn');
   if (countBtn) countBtn.style.display = canManageAssets ? 'block' : 'none';
+  const formsLink = document.getElementById('formsNavGroup');
+  if (formsLink) formsLink.style.display = canManageAssets ? '' : 'none';
+  const borrowersBtn = document.getElementById('borrowersTrackerBtn');
+  if (borrowersBtn) borrowersBtn.style.display = canManageAssets ? '' : 'none';
   const delLink = document.getElementById('deletedItemsMenuLink');
   if (delLink) delLink.style.display = isAdmin ? 'block' : 'none';
   const historyLink = document.getElementById('countHistoryMenuLink');

@@ -118,7 +118,7 @@ let ok = 0, bad = 0; const check = (n, c, x = '') => { (c ? ok++ : bad++); conso
   const txt = await page.innerText('#irPreview');
   check('grouped by person; JUAN has 2 items, disposed item excluded', txt.includes('JUAN DELA CRUZ — 2 item(s), qty 3') && !txt.includes('GONE'));
   check('"UNASSIGNED" group exists and is last', txt.indexOf('UNASSIGNED') > txt.indexOf('MARIA SANTOS'));
-  check('has a signature line for the receiver', txt.includes('Signature:') && txt.includes('Printed name: JUAN DELA CRUZ'));
+  check('has a signature line for the receiver', txt.includes('Signature:') && txt.includes('Issued to: JUAN DELA CRUZ'));
   check('XSS: no injected elements in the report', (await page.$$('#irPreview img[onerror], #irPreview script')).length === 0);
   await page.selectOption('#irBranch', 'MAKATI'); await page.click('#irGenerateBtn');
   check('branch filter (MAKATI) → only 1 item', (await page.innerText('#irStatus')).includes('1 item(s)'));
@@ -128,6 +128,30 @@ let ok = 0, bad = 0; const check = (n, c, x = '') => { (c ? ok++ : bad++); conso
   await page.selectOption('#irGroupBy', 'PERSON'); await page.click('#irGenerateBtn');
   const csv = await page.evaluate(() => { const g = window.__issuanceInternals; return g.buildCsv({ groups: g.buildGroups(window.__DB.assets.filter((a) => !a.is_deleted).map((a) => ({ id: a.id, name: a.name, issuedTo: a.issued_to, branch: a.branch, qty: a.qty })), 'PERSON', 'ALL', '') }); });
   check('CSV has a BOM and formulas are neutralised (=CMD → \'=CMD)', csv.charCodeAt(0) === 0xfeff && csv.includes("\"'=CMD() FORMULA\""));
+  // ---- Issuance report: department on the signature line + monthly view ----
+  const sigTxt = await page.innerText('#irPreview');
+  check('signature line shows "Department:" next to "Issued to:"', /Issued to: JUAN DELA CRUZ\s+Department: \S+/.test(sigTxt) && !sigTxt.includes('Printed name'), sigTxt.slice(sigTxt.indexOf('Issued to'), sigTxt.indexOf('Issued to') + 80));
+  const mres = await page.evaluate(() => {
+    const g = window.__issuanceInternals;
+    const items = [{ id: 'A1', name: 'LAPTOP', issuedTo: 'OLD', department: 'MIS', qty: 1 }, { id: 'A2', name: 'MOUSE', issuedTo: 'X', department: 'HR', qty: 1 }];
+    const hist = [
+      { asset_id: 'A1', new_value: 'PEDRO', edited_at: '2026-05-02T01:00:00Z' },
+      { asset_id: 'A1', new_value: 'ANA', edited_at: '2026-05-20T01:00:00Z' },
+      { asset_id: 'A2', new_value: '', edited_at: '2026-05-03T01:00:00Z' },
+      { asset_id: 'GONE', new_value: 'BOB', edited_at: '2026-05-03T01:00:00Z' },
+    ];
+    const out = g.buildMonthlyItems(items, hist);
+    const rep = { mode: 'MONTH', month: '2026-05', groupBy: 'PERSON', branch: 'ALL', generatedAt: '2026-06-01 10:00', groups: g.buildGroups(out, 'PERSON', 'ALL', '') };
+    return { n: out.length, who: out[0] && out[0].issuedTo, date: out[0] && out[0].issuedDate, html: g.buildHtml(rep), csv: g.buildCsv(rep), dept: g.departmentsOf([{ department: 'MIS' }, { department: 'HR' }, { department: '' }]) };
+  });
+  check('monthly: latest change wins, empty/unknown assets skipped', mres.n === 1 && mres.who === 'ANA' && mres.date === '2026-05-20', JSON.stringify(mres).slice(0, 120));
+  check('monthly: title, DATE ISSUED column and CSV column', mres.html.includes('MAY 2026') && mres.html.includes('DATE ISSUED') && mres.csv.includes('Date Issued') && mres.csv.includes('2026-05-20'), [mres.html.includes('MAY 2026'), mres.html.includes('DATE ISSUED'), mres.csv.includes('Date Issued'), mres.csv.includes('2026-05-20'), mres.html.slice(0,200)].join('|'));
+  check('departmentsOf joins unique departments', mres.dept === 'MIS / HR', mres.dept);
+  await page.selectOption('#irMode', 'MONTH');
+  check('Month picker appears for Monthly', await page.isVisible('#irMonth'));
+  await page.selectOption('#irMode', 'CURRENT');
+  await page.waitForFunction(() => document.getElementById('irStatus').textContent.includes('asset(s) loaded'));
+  await page.click('#irGenerateBtn');
   await page.evaluate(() => { window.__printed = false; });
   await page.click('#irPrintBtn'); await page.waitForFunction(() => window.__printed === true);
   const areas = await page.evaluate(() => [...document.querySelectorAll('.print-only-report')].map((e) => e.id + ':' + (e.innerHTML.length > 0)));

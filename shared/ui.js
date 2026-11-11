@@ -146,3 +146,42 @@ function showConfirm(message, options = {}) {
     cancelBtn.addEventListener('click', onCancel);
   });
 }
+
+
+// Sidebar "Forms" group: click to open/close; opens by itself on the Forms pages
+// and highlights the page you are on.
+function initFormsNavGroup() {
+  const toggle = document.getElementById('formsGroupToggle');
+  const sub = document.getElementById('formsSub');
+  if (!toggle || !sub) return;
+  const path = window.location.pathname.replace(/\/index\.html$/, '/');
+  const onFormsPage = path.indexOf('/forms') === 0;
+  const setOpen = (open) => {
+    sub.style.display = open ? 'block' : 'none';
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    toggle.classList.toggle('open', open);
+  };
+  let open = onFormsPage;
+  if (!onFormsPage) {
+    try {
+      open = localStorage.getItem('formsNavOpen') === '1';
+    } catch (e) {
+      open = false;
+    }
+  }
+  setOpen(open);
+  toggle.classList.toggle('active', onFormsPage);
+  sub.querySelectorAll('.nav-sub-link').forEach((a) => {
+    a.classList.toggle('active', a.getAttribute('href') === path);
+  });
+  toggle.addEventListener('click', () => {
+    const next = sub.style.display === 'none';
+    setOpen(next);
+    try {
+      localStorage.setItem('formsNavOpen', next ? '1' : '0');
+    } catch (e) {
+      /* storage not available: the menu still works */
+    }
+  });
+}
+document.addEventListener('DOMContentLoaded', initFormsNavGroup);
